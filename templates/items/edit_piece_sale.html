@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Piece Sale - {{ item.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>Edit Piece Sale</h2>
+                    <p class="text-muted">{{ item.title }}</p>
+                </div>
+                <a href="{{ url_for('items.view', item_id=item.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Item
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>Edit Sale Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="sale_date" class="form-label">Sale Date</label>
+                                    <input type="date" class="form-control" id="sale_date" name="sale_date" 
+                                           value="{{ sale.sale_date.strftime('%Y-%m-%d') if sale.sale_date else '' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="pieces_sold" class="form-label">Pieces Sold</label>
+                                    <input type="number" class="form-control" id="pieces_sold" name="pieces_sold" 
+                                           value="{{ sale.pieces_sold }}" min="1" required>
+                                    <div class="form-text">Current remaining: {{ item.pieces_remaining or 0 }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="sale_price_per_piece" class="form-label">Price per Piece</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="sale_price_per_piece" 
+                                               name="sale_price_per_piece" step="0.01" min="0" 
+                                               value="{{ sale.sale_price_per_piece or 0 }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="total_sale_amount" class="form-label">Total Sale Amount</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="total_sale_amount" 
+                                               name="total_sale_amount" step="0.01" min="0" 
+                                               value="{{ sale.total_sale_amount or 0 }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="sale_channel" class="form-label">Sale Channel</label>
+                                    <select class="form-select" id="sale_channel" name="sale_channel">
+                                        <option value="">Select Channel</option>
+                                        <option value="Facebook Marketplace" {{ 'selected' if sale.sale_channel == 'Facebook Marketplace' }}>Facebook Marketplace</option>
+                                        <option value="eBay" {{ 'selected' if sale.sale_channel == 'eBay' }}>eBay</option>
+                                        <option value="Craigslist" {{ 'selected' if sale.sale_channel == 'Craigslist' }}>Craigslist</option>
+                                        <option value="Local" {{ 'selected' if sale.sale_channel == 'Local' }}>Local</option>
+                                        <option value="Other" {{ 'selected' if sale.sale_channel == 'Other' }}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="buyer_info" class="form-label">Buyer Information</label>
+                                    <input type="text" class="form-control" id="buyer_info" name="buyer_info" 
+                                           value="{{ sale.buyer_info or '' }}" placeholder="Buyer name or details">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                      placeholder="Any additional notes about this sale">{{ sale.notes or '' }}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('items.view', item_id=item.id) }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update Sale
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Item Summary</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Total Pieces:</strong> {{ item.pieces_total or 0 }}</p>
+                    <p><strong>Pieces Remaining:</strong> {{ item.pieces_remaining or 0 }}</p>
+                    <p><strong>Pieces Sold:</strong> {{ item.pieces_sold or 0 }}</p>
+                    <p><strong>Cost per Piece:</strong> ${{ "%.2f"|format(item.cost_per_piece or 0) }}</p>
+                    
+                    <hr>
+                    
+                    <p><strong>Total Revenue:</strong> ${{ "%.2f"|format(item.total_piece_sales_revenue or 0) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const piecesInput = document.getElementById('pieces_sold');
+    const priceInput = document.getElementById('sale_price_per_piece');
+    const totalInput = document.getElementById('total_sale_amount');
+    
+    function updateTotal() {
+        const pieces = parseInt(piecesInput.value) || 0;
+        const price = parseFloat(priceInput.value) || 0;
+        totalInput.value = (pieces * price).toFixed(2);
+    }
+    
+    piecesInput.addEventListener('input', updateTotal);
+    priceInput.addEventListener('input', updateTotal);
+});
+</script>
+{% endblock %}
