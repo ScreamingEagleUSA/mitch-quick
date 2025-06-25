@@ -256,8 +256,18 @@ function exportWatchlist() {
 }
 
 function planBiddingStrategy() {
-    const totalMaxBids = {{ items | sum(attribute='planned_max_bid') | default(0) }};
-    const totalTargetValue = {{ items | sum(attribute='target_resale_price') | default(0) }};
+    {% set js_total_max_bids = 0 %}
+    {% set js_total_target_value = 0 %}
+    {% for item in items %}
+        {% if item.planned_max_bid %}
+            {% set js_total_max_bids = js_total_max_bids + item.planned_max_bid %}
+        {% endif %}
+        {% if item.target_resale_price %}
+            {% set js_total_target_value = js_total_target_value + item.target_resale_price %}
+        {% endif %}
+    {% endfor %}
+    const totalMaxBids = {{ js_total_max_bids }};
+    const totalTargetValue = {{ js_total_target_value }};
     const itemCount = {{ items | length }};
     
     if (itemCount === 0) {
