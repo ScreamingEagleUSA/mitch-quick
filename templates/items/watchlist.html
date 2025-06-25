@@ -37,7 +37,9 @@
                             {% if item.lot_number %}
                             <span class="badge bg-secondary me-2">#{{ item.lot_number }}</span>
                             {% endif %}
-                            {{ item.title }}
+                            <a href="{{ url_for('items.view', item_id=item.id) }}" class="text-decoration-none text-reset">
+                                {{ item.title }}
+                            </a>
                         </h6>
                         <div class="btn-group" role="group">
                             <a href="{{ url_for('items.edit', item_id=item.id) }}" 
