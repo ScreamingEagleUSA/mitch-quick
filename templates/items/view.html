@@ -9,18 +9,29 @@
         <div class="col">
             <h1 class="h2 mb-0">
                 <i class="fas fa-box me-2"></i>{{ item.title }}
+                {% if item.multiple_pieces %}
+                    <span class="badge bg-info ms-2">Multiple Pieces</span>
+                {% endif %}
             </h1>
             <p class="text-muted">
                 {% if item.lot_number %}Lot {{ item.lot_number }} • {% endif %}
                 {{ item.auction.title if item.auction else 'No auction' }}
+                {% if item.multiple_pieces %}
+                    • {{ item.pieces_remaining or 0 }}/{{ item.pieces_total or 0 }} pieces remaining
+                {% endif %}
             </p>
         </div>
         <div class="col-auto">
             <div class="btn-group" role="group">
+                {% if item.multiple_pieces and item.pieces_remaining and item.pieces_remaining > 0 %}
+                <a href="{{ url_for('items.sell_pieces', item_id=item.id) }}" class="btn btn-success">
+                    <i class="fas fa-shopping-cart me-2"></i>Sell Pieces
+                </a>
+                {% endif %}
                 <a href="{{ url_for('items.edit', item_id=item.id) }}" class="btn btn-primary">
                     <i class="fas fa-edit me-2"></i>Edit Item
                 </a>
-                <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-success">
+                <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-outline-primary">
                     <i class="fas fa-users me-2"></i>Manage Partners
                 </a>
                 <a href="{{ url_for('items.index') }}" class="btn btn-outline-secondary">

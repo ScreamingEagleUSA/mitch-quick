@@ -123,7 +123,6 @@ def create():
                 # Multiple pieces functionality
                 multiple_pieces=request.form.get('multiple_pieces') == 'on',
                 pieces_total=int(request.form.get('pieces_total')) if request.form.get('pieces_total') else None
-                shipping_cost=float(request.form.get('shipping_cost')) if request.form.get('shipping_cost') else None
             )
             
             # Handle dates
@@ -201,9 +200,6 @@ def edit(item_id):
             item.multiple_pieces = False
             item.pieces_total = None
             item.pieces_remaining = None
-        
-        # Sale details
-        sale_date_str = request.form.get('sale_date')
         if sale_date_str:
             item.sale_date = datetime.strptime(sale_date_str, '%Y-%m-%d').date()
         item.sale_price = float(request.form.get('sale_price')) if request.form.get('sale_price') else None
