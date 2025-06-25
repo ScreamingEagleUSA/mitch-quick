@@ -46,41 +46,57 @@ def index():
 def create():
     """Create new item"""
     if request.method == 'POST':
-        auction_id = request.form.get('auction_id')
-        lot_number = request.form.get('lot_number')
-        title = request.form.get('title')
-        description = request.form.get('description')
-        planned_max_bid = request.form.get('planned_max_bid')
-        target_resale_price = request.form.get('target_resale_price')
-        
-        # Validation
-        if not auction_id or not title:
-            flash('Auction and title are required.', 'danger')
-            return render_template('items/form.html', auctions=Auction.query.all())
-        
-        # Create item
-        item = Item(
-            auction_id=int(auction_id),
-            lot_number=lot_number,
-            title=title,
-            description=description,
-            planned_max_bid=float(planned_max_bid) if planned_max_bid else None,
-            target_resale_price=float(target_resale_price) if target_resale_price else None,
-            status=ItemStatus.WATCH
-        )
-        
         try:
+            # Get all form data
+            auction_id = request.form.get('auction_id')
+            title = request.form.get('title')
+            
+            # Validation
+            if not auction_id or not title:
+                flash('Auction and title are required.', 'danger')
+                return render_template('items/form.html', auctions=Auction.query.all())
+            
+            # Create item with all form fields
+            item = Item(
+                auction_id=int(auction_id),
+                lot_number=request.form.get('lot_number') or None,
+                title=title,
+                description=request.form.get('description') or None,
+                planned_max_bid=float(request.form.get('planned_max_bid')) if request.form.get('planned_max_bid') else None,
+                target_resale_price=float(request.form.get('target_resale_price')) if request.form.get('target_resale_price') else None,
+                status=ItemStatus(request.form.get('status', 'watch')),
+                purchase_price=float(request.form.get('purchase_price')) if request.form.get('purchase_price') else None,
+                refurb_cost=float(request.form.get('refurb_cost')) if request.form.get('refurb_cost') else None,
+                list_channel=request.form.get('list_channel') or None,
+                sale_price=float(request.form.get('sale_price')) if request.form.get('sale_price') else None,
+                sale_fees=float(request.form.get('sale_fees')) if request.form.get('sale_fees') else None,
+                shipping_cost=float(request.form.get('shipping_cost')) if request.form.get('shipping_cost') else None
+            )
+            
+            # Handle dates
+            list_date_str = request.form.get('list_date')
+            if list_date_str:
+                item.list_date = datetime.strptime(list_date_str, '%Y-%m-%d').date()
+            
+            sale_date_str = request.form.get('sale_date')
+            if sale_date_str:
+                item.sale_date = datetime.strptime(sale_date_str, '%Y-%m-%d').date()
+            
             db.session.add(item)
             db.session.commit()
             
-            # Try to get eBay price suggestion
-            ebay_api.update_item_price_suggestion(item)
+            # Try to get eBay price suggestion (non-blocking)
+            try:
+                ebay_api.update_item_price_suggestion(item)
+            except:
+                pass  # Don't fail item creation if eBay API fails
             
-            flash('Item created successfully!', 'success')
-            return redirect(url_for('items.index'))
+            flash('Item created successfully! You can now add partners if needed.', 'success')
+            return redirect(url_for('items.edit', item_id=item.id))
+            
         except Exception as e:
             db.session.rollback()
-            flash('Error creating item. Please try again.', 'danger')
+            flash(f'Error creating item: {str(e)}', 'danger')
     
     auctions = Auction.query.order_by(Auction.date.desc()).all()
     return render_template('items/form.html', auctions=auctions)
