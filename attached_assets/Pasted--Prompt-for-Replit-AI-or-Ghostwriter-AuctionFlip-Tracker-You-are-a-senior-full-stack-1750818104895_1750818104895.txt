@@ -1,0 +1,90 @@
+**Prompt for Replit AI (or Ghostwriter) — *“AuctionFlip Tracker”***
+
+> **You are a senior full-stack engineer, GAAP-savvy accountant, and auction-flipping strategist.
+> Build a production-ready web app called **AuctionFlip Tracker** inside this Replit.**
+> Use Python 3.12 + Flask 3, SQLAlchemy, and SQLite (or Replit DB), with a feather-light front-end (HTMX + Alpine.js + Tailwind CDN).
+>
+> ### 1 – Core Features
+>
+> 1. **Auctions CRUD** – title, date, location, URL/PDF, notes.
+> 2. **Watchlist** – bookmark lots with planned max bid & target resale price.
+> 3. **Inventory** – when an item is won: purchase price, status, refurb cost.
+> 4. **Sales logging** – list-channel, sale price, marketplace fees, shipping.
+> 5. **Profit engine** – auto-compute gross & net profit, ROI, break-even.
+> 6. **Partner splits** – any # of partners per item, variable % shares, payout ledger.
+> 7. **Dashboards** – Upcoming, Watchlist, Inventory, Sold, Partner Earnings.
+>
+> ### 2 – Stretch Features to INCLUDE
+>
+> * **OCR lot-sheet import**
+>   *Upload PDF → parse with pdfplumber + pytesseract; pre-fill Item rows.*
+> * **Auto-price suggestion**
+>   *Fetch sold-comp median via eBay Browse API (condition = “used”), display next to target resale.*
+> * **Cash-flow report**
+>   *Weekly scheduled job (Replit cron) e-mails CSV & chart of money-out vs money-in.*
+>
+> ### 3 – Stretch Features to EXCLUDE
+>
+> * Multi-currency
+> * Chrome extension
+> * Barcode / QR labels
+>   (Do **not** scaffold or reference these.)
+>
+> ### 4 – Data Model (SQLAlchemy)
+>
+> ```text
+> Auction(id, title, date, location, url, notes)
+> Item(id, auction_id⇢Auction, lot_number, title, description,
+>      planned_max_bid, target_resale_price,
+>      status ENUM('watch','won','listed','sold'),
+>      purchase_price, refurb_cost,
+>      list_date, list_channel,
+>      sale_date, sale_price, sale_fees, shipping_cost,
+>      created_at, updated_at)
+> Partner(id, name, email)
+> ItemPartner(id, item_id⇢Item, partner_id⇢Partner, pct_share)
+> ```
+>
+> Functions: `gross_profit`, `net_profit`, `partner_share`.
+>
+> ### 5 – Backend Blueprint Layout
+>
+> ```
+> /blueprints
+>   ├─ auctions.py   (/auctions)
+>   ├─ items.py      (/items)
+>   ├─ partners.py   (/partners)
+>   ├─ dashboard.py  (/dashboard)
+>   └─ reports.py    (/reports)   # cash-flow CSV & chart
+> ```
+>
+> Use Flask-Migrate for DB versioning and Flask-Login for auth (single-tenant initially).
+>
+> ### 6 – Front-End UX
+>
+> * Use HTMX for CRUD modals & inline-edit rows (no SPA).
+> * Tailwind CDN classes for styling; responsive tables & cards.
+> * Dashboard cards show key KPIs (Total Spent, Total Net Profit, ROI %).
+> * Sold-item drawer reveals partner split breakdown.
+>
+> ### 7 – Integrations & Jobs
+>
+> 1. **OCR Import** – route `/import/pdf` → extract lots, return preview table for user confirmation then bulk-insert.
+> 2. **eBay API** – store `EBAY_APP_ID` in Replit Secrets; helper `get_median_sold_price(query, condition)` caches 24 h.
+> 3. **Weekly cash-flow email** – Replit scheduled trigger every Monday 09:00 EST; generate CSV & matplotlib chart, send via Python `smtplib` (SMTP creds in Secrets).
+>
+> ### 8 – Testing & Deployment
+>
+> * Write pytest unit tests for profit math and OCR parser.
+> * `replit.nix` includes Tesseract & pdfplumber deps.
+> * Add `.replit` run command: `python app.py`.
+> * Enable “Deployments → Web service” for HTTPS URL.
+>
+> ### 9 – Deliverables
+>
+> 1. Complete file tree with blueprints, templates, static, tests.
+> 2. Seed script populating sample auctions, items, partners.
+> 3. `README.md` covering setup, secrets, API keys, and cron setup.
+> 4. Screenshots / GIF in README demonstrating OCR import, auto-pricing, and dashboards.
+>
+> **Start coding now. Reply only with the final file tree followed by the first file contents, then continue iteratively until the project is fully scaffolded.**
