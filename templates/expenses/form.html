@@ -36,7 +36,7 @@
                                     <option value="">Select an item...</option>
                                     {% for item in items %}
                                     <option value="{{ item.id }}" 
-                                            {% if expense and expense.item_id == item.id %}selected{% endif %}>
+                                            {% if (expense and expense.item_id == item.id) or (selected_item_id and selected_item_id == item.id) %}selected{% endif %}>
                                         {{ item.title }}
                                         {% if item.lot_number %} (Lot #{{ item.lot_number }}){% endif %}
                                     </option>
