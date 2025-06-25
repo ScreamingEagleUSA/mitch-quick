@@ -53,7 +53,12 @@
             <div class="card">
                 <div class="card-body text-center">
                     <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
-                    {% set total_profit = (items|sum(attribute='sale_price')|float) - (items|sum(attribute='purchase_price')|float) - (items|sum(attribute='refurb_cost')|float) - (items|sum(attribute='sale_fees')|float) - (items|sum(attribute='shipping_cost')|float) %}
+                    {% set sale_total = items|map(attribute='sale_price')|select|sum %}
+                    {% set purchase_total = items|map(attribute='purchase_price')|select|sum %}
+                    {% set refurb_total = items|map(attribute='refurb_cost')|select|sum %}
+                    {% set fees_total = items|map(attribute='sale_fees')|select|sum %}
+                    {% set shipping_total = items|map(attribute='shipping_cost')|select|sum %}
+                    {% set total_profit = (sale_total or 0) - (purchase_total or 0) - (refurb_total or 0) - (fees_total or 0) - (shipping_total or 0) %}
                     <h5 class="card-title {% if total_profit > 0 %}text-success{% else %}text-danger{% endif %}">
                         ${{ "%.2f"|format(total_profit) }}
                     </h5>

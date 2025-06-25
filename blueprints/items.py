@@ -497,16 +497,15 @@ def sell_pieces(item_id):
                 return redirect(request.url)
             
             # Create the sale record
-            sale = ItemSale(
-                item_id=item.id,
-                pieces_sold=pieces_sold,
-                sale_price_per_piece=sale_price_per_piece,
-                total_sale_amount=pieces_sold * sale_price_per_piece,
-                sale_date=datetime.strptime(sale_date_str, '%Y-%m-%d').date() if sale_date_str else datetime.utcnow().date(),
-                buyer_info=buyer_info,
-                sale_channel=sale_channel,
-                notes=notes
-            )
+            sale = ItemSale()
+            sale.item_id = item.id
+            sale.pieces_sold = pieces_sold
+            sale.sale_price_per_piece = sale_price_per_piece
+            sale.total_sale_amount = pieces_sold * sale_price_per_piece
+            sale.sale_date = datetime.strptime(sale_date_str, '%Y-%m-%d').date() if sale_date_str else datetime.utcnow().date()
+            sale.buyer_info = buyer_info
+            sale.sale_channel = sale_channel
+            sale.notes = notes
             
             # Update remaining pieces
             item.pieces_remaining = item.pieces_remaining - pieces_sold
