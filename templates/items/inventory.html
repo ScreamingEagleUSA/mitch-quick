@@ -46,7 +46,7 @@
                     {% for item in items %}
                         {% set item_cost = (item.purchase_price or 0) + (item.refurb_cost or 0) %}
                         {% if item.total_expenses %}
-                            {% set item_cost = item_cost + item.total_expenses() %}
+                            {% set item_cost = item_cost + (item.total_expenses or 0) %}
                         {% endif %}
                         {% set total_invested = total_invested + item_cost %}
                     {% endfor %}
