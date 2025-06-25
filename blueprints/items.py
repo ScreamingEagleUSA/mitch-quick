@@ -189,8 +189,18 @@ def manage_partners(item_id):
                 db.session.rollback()
                 flash('Error updating partners. Please try again.', 'danger')
     
-    partners = Partner.query.order_by(Partner.name).all()
-    return render_template('items/partners.html', item=item, partners=partners)
+    # Get all partners and existing partnerships
+    partners = Partner.query.all()
+    existing_partnerships = ItemPartner.query.filter_by(item_id=item_id).all()
+    
+    # Calculate total percentage
+    total_percentage = sum(p.pct_share for p in existing_partnerships) if existing_partnerships else 0
+    
+    return render_template('items/partners.html', 
+                         item=item, 
+                         partners=partners, 
+                         existing_partnerships=existing_partnerships,
+                         total_percentage=total_percentage)
 
 @items_bp.route('/import', methods=['GET', 'POST'])
 @require_login
@@ -521,3 +531,10 @@ def sold():
     """Show sold items"""
     items = Item.query.filter_by(status=ItemStatus.SOLD).order_by(Item.sale_date.desc()).all()
     return render_template('items/sold.html', items=items)
+
+@items_bp.route('/<int:item_id>')
+@require_login
+def view(item_id):
+    """View item details"""
+    item = Item.query.get_or_404(item_id)
+    return render_template('items/view.html', item=item)

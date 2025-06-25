@@ -3,21 +3,224 @@
 {% block title %}Manage Partners - {{ item.title }} - Mitch Quick{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Manage Partners</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ url_for('items.view', item_id=item.id) }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-1"></i>Back to Item
-        </a>
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-users me-2"></i>Manage Partners
+            </h1>
+            <p class="text-muted">{{ item.title }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('items.edit', item_id=item.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Item
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Current Partners -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-handshake me-2"></i>Current Partners
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if existing_partnerships %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Partner</th>
+                                        <th>Percentage Share</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for partnership in existing_partnerships %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ partnership.partner.name }}</strong>
+                                            {% if partnership.partner.email %}
+                                            <br><small class="text-muted">{{ partnership.partner.email }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ "%.1f"|format(partnership.pct_share) }}%</span>
+                                        </td>
+                                        <td>
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="action" value="remove_partner">
+                                                <input type="hidden" name="partnership_id" value="{{ partnership.id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="return confirm('Remove this partner?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-secondary">
+                                        <td><strong>Total</strong></td>
+                                        <td>
+                                            <span class="badge {% if total_percentage > 100 %}bg-danger{% elif total_percentage == 100 %}bg-success{% else %}bg-warning{% endif %}">
+                                                {{ "%.1f"|format(total_percentage) }}%
+                                            </span>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        {% if total_percentage > 100 %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Warning: Total percentage exceeds 100%. Please adjust partner shares.
+                        </div>
+                        {% elif total_percentage < 100 %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Remaining ownership: {{ "%.1f"|format(100 - total_percentage) }}%
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            All ownership allocated (100%)
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-user-plus fa-3x text-muted mb-3"></i>
+                            <h5>No Partners Added</h5>
+                            <p class="text-muted">Add partners to share profits from this item.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Add Partner Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-plus me-2"></i>Add Partner
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if partners %}
+                        <form method="POST">
+                            <input type="hidden" name="action" value="add_partner">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="partner_id" class="form-label">Partner</label>
+                                    <select class="form-select" id="partner_id" name="partner_id" required>
+                                        <option value="">Select a partner...</option>
+                                        {% for partner in partners %}
+                                        <option value="{{ partner.id }}">{{ partner.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="pct_share" class="form-label">Percentage Share</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="pct_share" name="pct_share" 
+                                               min="0" max="100" step="0.1" required
+                                               placeholder="0.0">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button type="submit" class="btn btn-primary d-block">
+                                        <i class="fas fa-plus me-1"></i>Add
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No partners available. <a href="{{ url_for('partners.create') }}">Create a partner</a> first.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Item Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Item Details
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Status:</dt>
+                        <dd class="col-sm-6">
+                            <span class="badge bg-secondary">{{ item.status.value|title }}</span>
+                        </dd>
+                        
+                        {% if item.purchase_price %}
+                        <dt class="col-sm-6">Purchase:</dt>
+                        <dd class="col-sm-6">${{ "%.2f"|format(item.purchase_price) }}</dd>
+                        {% endif %}
+                        
+                        {% if item.sale_price %}
+                        <dt class="col-sm-6">Sale Price:</dt>
+                        <dd class="col-sm-6">${{ "%.2f"|format(item.sale_price) }}</dd>
+                        
+                        <dt class="col-sm-6">Net Profit:</dt>
+                        <dd class="col-sm-6">
+                            {% if item.net_profit() %}
+                                <span class="{% if item.net_profit() > 0 %}text-success{% else %}text-danger{% endif %}">
+                                    ${{ "%.2f"|format(item.net_profit()) }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Profit Distribution Preview -->
+            {% if existing_partnerships and item.net_profit() %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Profit Distribution
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for partnership in existing_partnerships %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ partnership.partner.name }}</span>
+                        <span class="badge bg-success">
+                            ${{ "%.2f"|format(partnership.calculate_partner_share()) }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>Your Share ({{ "%.1f"|format(100 - total_percentage) }}%)</strong>
+                        <span class="badge bg-primary">
+                            ${{ "%.2f"|format(item.net_profit() * (100 - total_percentage) / 100) }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
-
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-users me-2"></i>Partner Shares for: {{ item.title }}
+{% endblock %}
                 </h5>
             </div>
             <div class="card-body">
