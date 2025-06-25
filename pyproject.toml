@@ -19,4 +19,7 @@ dependencies = [
     "flask-migrate>=4.1.0",
     "matplotlib>=3.10.3",
     "pillow>=11.2.1",
+    "pyjwt>=2.10.1",
+    "flask-dance>=7.1.0",
+    "oauthlib>=3.3.1",
 ]

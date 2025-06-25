@@ -1,9 +1,7 @@
 import os
 import logging
-from flask import Flask
+from flask import Flask, session
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
-from flask_migrate import Migrate
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -13,59 +11,36 @@ logging.basicConfig(level=logging.DEBUG)
 class Base(DeclarativeBase):
     pass
 
-db = SQLAlchemy(model_class=Base)
-login_manager = LoginManager()
-migrate = Migrate()
+# Initialize Flask app
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1) # needed for url_for to generate with https
 
-def create_app():
-    app = Flask(__name__)
-    
-    # Configuration
-    app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///mitchquick.db")
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-    }
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    
-    # Add proxy fix for deployment
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-    
-    # Initialize extensions
-    db.init_app(app)
-    migrate.init_app(app, db)
-    login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Please log in to access this page.'
-    login_manager.login_message_category = 'info'
-    
-    # Import models to ensure they're registered
-    from models import User, Auction, Item, Partner, ItemPartner
-    
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
-    
-    # Register blueprints
-    from blueprints.auth import auth_bp
-    from blueprints.dashboard import dashboard_bp
-    from blueprints.auctions import auctions_bp
-    from blueprints.items import items_bp
-    from blueprints.partners import partners_bp
-    from blueprints.reports import reports_bp
-    
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(dashboard_bp, url_prefix='/')
-    app.register_blueprint(auctions_bp, url_prefix='/auctions')
-    app.register_blueprint(items_bp, url_prefix='/items')
-    app.register_blueprint(partners_bp, url_prefix='/partners')
-    app.register_blueprint(reports_bp, url_prefix='/reports')
-    
-    # Create tables
-    with app.app_context():
-        db.create_all()
-    
-    return app
+# Database configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    'pool_pre_ping': True,
+    "pool_recycle": 300,
+}
 
-app = create_app()
+# No need to call db.init_app(app) here, it's already done in the constructor.
+db = SQLAlchemy(app, model_class=Base)
+
+# Create tables
+# Need to put this in module-level to make it work with Gunicorn.
+with app.app_context():
+    import models  # noqa: F401
+    db.create_all()
+    logging.info("Database tables created")
+    
+    # Add custom template filter
+    @app.template_filter('tojsonfilter')
+    def to_json_filter(obj):
+        import json
+        return json.dumps(obj)
+
+# Make session permanent
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
