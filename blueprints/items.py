@@ -28,9 +28,7 @@ def index():
     if auction_filter != 'all':
         query = query.filter(Item.auction_id == int(auction_filter))
     
-    items = query.order_by(Item.updated_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
+    items = query.order_by(Item.updated_at.desc()).all()
     
     # Get auctions for filter dropdown
     auctions = Auction.query.order_by(Auction.date.desc()).all()
