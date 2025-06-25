@@ -7,7 +7,7 @@ from app import db
 partners_bp = Blueprint('partners', __name__)
 
 @partners_bp.route('/')
-@login_required
+@require_login
 def index():
     """List all partners"""
     partners = Partner.query.order_by(Partner.name).all()
@@ -44,7 +44,7 @@ def index():
     return render_template('partners/index.html', partners=partners, partner_stats=partner_stats)
 
 @partners_bp.route('/create', methods=['GET', 'POST'])
-@login_required
+@require_login
 def create():
     """Create new partner"""
     if request.method == 'POST':
@@ -76,7 +76,7 @@ def create():
     return render_template('partners/form.html')
 
 @partners_bp.route('/<int:partner_id>/edit', methods=['GET', 'POST'])
-@login_required
+@require_login
 def edit(partner_id):
     """Edit partner"""
     partner = Partner.query.get_or_404(partner_id)
@@ -107,7 +107,7 @@ def edit(partner_id):
     return render_template('partners/form.html', partner=partner)
 
 @partners_bp.route('/<int:partner_id>/delete', methods=['POST'])
-@login_required
+@require_login
 def delete(partner_id):
     """Delete partner"""
     partner = Partner.query.get_or_404(partner_id)
@@ -128,7 +128,7 @@ def delete(partner_id):
     return redirect(url_for('partners.index'))
 
 @partners_bp.route('/<int:partner_id>/view')
-@login_required
+@require_login
 def view(partner_id):
     """View partner details and earnings"""
     partner = Partner.query.get_or_404(partner_id)
@@ -174,7 +174,7 @@ def view(partner_id):
                          pending_earnings=pending_earnings)
 
 @partners_bp.route('/<int:partner_id>/earnings/export')
-@login_required
+@require_login
 def export_earnings(partner_id):
     """Export partner earnings as CSV"""
     partner = Partner.query.get_or_404(partner_id)
@@ -234,7 +234,7 @@ def export_earnings(partner_id):
     )
 
 @partners_bp.route('/earnings')
-@login_required
+@require_login
 def earnings_summary():
     """Show earnings summary for all partners"""
     partners = Partner.query.order_by(Partner.name).all()

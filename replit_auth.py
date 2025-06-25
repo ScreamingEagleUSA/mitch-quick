@@ -163,17 +163,24 @@ def require_login(f):
             session["next_url"] = get_next_navigation_url(request)
             return redirect(url_for('replit_auth.login'))
 
-        expires_in = replit.token.get('expires_in', 0)
-        if expires_in < 0:
-            refresh_token_url = issuer_url + "/token"
-            try:
-                token = replit.refresh_token(token_url=refresh_token_url,
-                                             client_id=os.environ['REPL_ID'])
-            except InvalidGrantError:
-                # If the refresh token is invalid, the users needs to re-login.
-                session["next_url"] = get_next_navigation_url(request)
-                return redirect(url_for('replit_auth.login'))
-            replit.token_updater(token)
+        # Check if we have a valid token
+        try:
+            expires_in = replit.token.get('expires_in', 0) if replit.token else -1
+            if expires_in < 0:
+                issuer_url = os.environ.get('ISSUER_URL', "https://replit.com/oidc")
+                refresh_token_url = issuer_url + "/token"
+                try:
+                    token = replit.refresh_token(token_url=refresh_token_url,
+                                                 client_id=os.environ['REPL_ID'])
+                    replit.token_updater(token)
+                except (InvalidGrantError, AttributeError):
+                    # If the refresh token is invalid, the users needs to re-login.
+                    session["next_url"] = get_next_navigation_url(request)
+                    return redirect(url_for('replit_auth.login'))
+        except AttributeError:
+            # No token available, redirect to login
+            session["next_url"] = get_next_navigation_url(request)
+            return redirect(url_for('replit_auth.login'))
 
         return f(*args, **kwargs)
 

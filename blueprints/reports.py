@@ -11,13 +11,13 @@ from app import db
 reports_bp = Blueprint('reports', __name__)
 
 @reports_bp.route('/')
-@login_required
+@require_login
 def index():
     """Reports dashboard"""
     return render_template('reports/index.html')
 
 @reports_bp.route('/cashflow')
-@login_required
+@require_login
 def cashflow():
     """Cash flow report"""
     # Get date range from request or default to last 30 days
@@ -40,7 +40,7 @@ def cashflow():
                          end_date=end_date_str)
 
 @reports_bp.route('/profit-analysis')
-@login_required
+@require_login
 def profit_analysis():
     """Profit analysis report"""
     # Get all sold items
@@ -87,7 +87,7 @@ def profit_analysis():
     return render_template('reports/profit_analysis.html', analysis_data=analysis_data)
 
 @reports_bp.route('/partner-report')
-@login_required
+@require_login
 def partner_report():
     """Partner earnings report"""
     partners = Partner.query.all()
@@ -136,7 +136,7 @@ def partner_report():
     return render_template('reports/partner_report.html', partner_data=partner_data)
 
 @reports_bp.route('/export/cashflow')
-@login_required
+@require_login
 def export_cashflow():
     """Export cash flow report as CSV"""
     start_date_str = request.args.get('start_date', (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
@@ -169,7 +169,7 @@ def export_cashflow():
     )
 
 @reports_bp.route('/export/profit-analysis')
-@login_required
+@require_login
 def export_profit_analysis():
     """Export profit analysis as CSV"""
     sold_items = Item.query.filter_by(status=ItemStatus.SOLD).all()
@@ -219,7 +219,7 @@ def export_profit_analysis():
     )
 
 @reports_bp.route('/send-weekly-report', methods=['POST'])
-@login_required
+@require_login
 def send_weekly_report():
     """Send weekly cash flow report via email"""
     recipient_emails = request.form.get('emails', '').split(',')

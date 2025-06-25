@@ -11,7 +11,7 @@ from app import db
 items_bp = Blueprint('items', __name__)
 
 @items_bp.route('/')
-@login_required
+@require_login
 def index():
     """List all items with filtering"""
     status_filter = request.args.get('status', 'all')
@@ -42,7 +42,7 @@ def index():
                          auction_filter=auction_filter)
 
 @items_bp.route('/create', methods=['GET', 'POST'])
-@login_required
+@require_login
 def create():
     """Create new item"""
     if request.method == 'POST':
@@ -86,7 +86,7 @@ def create():
     return render_template('items/form.html', auctions=auctions)
 
 @items_bp.route('/<int:item_id>/edit', methods=['GET', 'POST'])
-@login_required
+@require_login
 def edit(item_id):
     """Edit item"""
     item = Item.query.get_or_404(item_id)
@@ -136,7 +136,7 @@ def edit(item_id):
     return render_template('items/form.html', item=item, auctions=auctions)
 
 @items_bp.route('/<int:item_id>/delete', methods=['POST'])
-@login_required
+@require_login
 def delete(item_id):
     """Delete item"""
     item = Item.query.get_or_404(item_id)
@@ -152,7 +152,7 @@ def delete(item_id):
     return redirect(url_for('items.index'))
 
 @items_bp.route('/<int:item_id>/partners', methods=['GET', 'POST'])
-@login_required
+@require_login
 def manage_partners(item_id):
     """Manage item partners"""
     item = Item.query.get_or_404(item_id)
@@ -193,7 +193,7 @@ def manage_partners(item_id):
     return render_template('items/partners.html', item=item, partners=partners)
 
 @items_bp.route('/import', methods=['GET', 'POST'])
-@login_required
+@require_login
 def import_pdf():
     """Import items from PDF lot sheet"""
     if request.method == 'POST':
@@ -243,7 +243,7 @@ def import_pdf():
     return render_template('items/import.html', auctions=auctions)
 
 @items_bp.route('/import/preview', methods=['GET', 'POST'])
-@login_required
+@require_login
 def import_preview():
     """Preview and confirm PDF import"""
     from flask import session
@@ -299,7 +299,7 @@ def import_preview():
                          lots=preview_data['lots'])
 
 @items_bp.route('/<int:item_id>/update-price', methods=['POST'])
-@login_required
+@require_login
 def update_price_suggestion(item_id):
     """Update eBay price suggestion for item"""
     item = Item.query.get_or_404(item_id)
@@ -320,21 +320,21 @@ def update_price_suggestion(item_id):
         return jsonify({'success': False, 'error': str(e)})
 
 @items_bp.route('/watchlist')
-@login_required
+@require_login
 def watchlist():
     """Show watchlist items"""
     items = Item.query.filter_by(status=ItemStatus.WATCH).order_by(Item.created_at.desc()).all()
     return render_template('items/watchlist.html', items=items)
 
 @items_bp.route('/inventory')
-@login_required
+@require_login
 def inventory():
     """Show inventory (won items)"""
     items = Item.query.filter_by(status=ItemStatus.WON).order_by(Item.updated_at.desc()).all()
     return render_template('items/inventory.html', items=items)
 
 @items_bp.route('/sold')
-@login_required
+@require_login
 def sold():
     """Show sold items"""
     items = Item.query.filter_by(status=ItemStatus.SOLD).order_by(Item.sale_date.desc()).all()

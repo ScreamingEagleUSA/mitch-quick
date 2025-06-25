@@ -72,7 +72,7 @@ def index():
                          weekly_data=weekly_data)
 
 @dashboard_bp.route('/kpis')
-@login_required
+@require_login
 def kpis():
     """Get KPI data for dashboard updates"""
     all_items = Item.query.all()
@@ -89,7 +89,7 @@ def kpis():
     })
 
 @dashboard_bp.route('/update-watchlist-prices', methods=['POST'])
-@login_required
+@require_login
 def update_watchlist_prices():
     """Update eBay price suggestions for all watchlist items"""
     try:
@@ -156,7 +156,7 @@ def get_weekly_performance_data():
     return [weekly_data[key] for key in sorted(weekly_data.keys())]
 
 @dashboard_bp.route('/quick-stats')
-@login_required
+@require_login
 def quick_stats():
     """Get quick stats for dashboard widgets"""
     # Today's stats

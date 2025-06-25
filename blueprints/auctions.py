@@ -7,7 +7,7 @@ from app import db
 auctions_bp = Blueprint('auctions', __name__)
 
 @auctions_bp.route('/')
-@login_required
+@require_login
 def index():
     """List all auctions"""
     page = request.args.get('page', 1, type=int)
@@ -20,7 +20,7 @@ def index():
     return render_template('auctions/index.html', auctions=auctions)
 
 @auctions_bp.route('/create', methods=['GET', 'POST'])
-@login_required
+@require_login
 def create():
     """Create new auction"""
     if request.method == 'POST':
@@ -62,7 +62,7 @@ def create():
     return render_template('auctions/form.html')
 
 @auctions_bp.route('/<int:auction_id>/edit', methods=['GET', 'POST'])
-@login_required
+@require_login
 def edit(auction_id):
     """Edit auction"""
     auction = Auction.query.get_or_404(auction_id)
@@ -97,7 +97,7 @@ def edit(auction_id):
     return render_template('auctions/form.html', auction=auction)
 
 @auctions_bp.route('/<int:auction_id>/delete', methods=['POST'])
-@login_required
+@require_login
 def delete(auction_id):
     """Delete auction"""
     auction = Auction.query.get_or_404(auction_id)
@@ -118,7 +118,7 @@ def delete(auction_id):
     return redirect(url_for('auctions.index'))
 
 @auctions_bp.route('/<int:auction_id>/view')
-@login_required
+@require_login
 def view(auction_id):
     """View auction details with items"""
     auction = Auction.query.get_or_404(auction_id)
@@ -129,7 +129,7 @@ def view(auction_id):
     return render_template('auctions/view.html', auction=auction, items=items)
 
 @auctions_bp.route('/api/search')
-@login_required
+@require_login
 def api_search():
     """API endpoint for auction search (for HTMX)"""
     query = request.args.get('q', '').strip()
