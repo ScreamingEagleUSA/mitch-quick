@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if expense else 'Add' }} Expense - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-receipt me-2"></i>{{ 'Edit' if expense else 'Add' }} Expense
+            </h1>
+            <p class="text-muted">{{ 'Update' if expense else 'Add' }} an itemized expense</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('expenses.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Expenses
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-{{ 'edit' if expense else 'plus' }} me-2"></i>Expense Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="item_id" class="form-label">Item <span class="text-danger">*</span></label>
+                                <select class="form-select" id="item_id" name="item_id" required>
+                                    <option value="">Select an item...</option>
+                                    {% for item in items %}
+                                    <option value="{{ item.id }}" 
+                                            {% if expense and expense.item_id == item.id %}selected{% endif %}>
+                                        {{ item.title }}
+                                        {% if item.lot_number %} (Lot #{{ item.lot_number }}){% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">The item this expense is associated with</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="date" name="date" 
+                                       value="{{ expense.date.strftime('%Y-%m-%d') if expense else '' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="description" name="description" 
+                                       value="{{ expense.description if expense else '' }}" 
+                                       placeholder="Brief description of the expense" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="amount" class="form-label">Amount <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="amount" name="amount" 
+                                           value="{{ expense.amount if expense else '' }}" 
+                                           step="0.01" min="0" placeholder="0.00" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">Select category...</option>
+                                <option value="shipping" {% if expense and expense.category == 'shipping' %}selected{% endif %}>Shipping</option>
+                                <option value="repair" {% if expense and expense.category == 'repair' %}selected{% endif %}>Repair</option>
+                                <option value="cleaning" {% if expense and expense.category == 'cleaning' %}selected{% endif %}>Cleaning</option>
+                                <option value="storage" {% if expense and expense.category == 'storage' %}selected{% endif %}>Storage</option>
+                                <option value="materials" {% if expense and expense.category == 'materials' %}selected{% endif %}>Materials</option>
+                                <option value="labor" {% if expense and expense.category == 'labor' %}selected{% endif %}>Labor</option>
+                                <option value="other" {% if expense and expense.category == 'other' %}selected{% endif %}>Other</option>
+                            </select>
+                            <div class="form-text">Optional categorization for reporting</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                      placeholder="Additional details about this expense...">{{ expense.notes if expense else '' }}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('expenses.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{ 'Update' if expense else 'Add' }} Expense
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set today's date as default if creating new expense
+{% if not expense %}
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('date');
+    if (!dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

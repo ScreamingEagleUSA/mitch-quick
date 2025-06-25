@@ -14,11 +14,14 @@
         </div>
         <div class="col-auto">
             <div class="btn-group" role="group">
+                <a href="{{ url_for('items.export_inventory') }}" class="btn btn-outline-success">
+                    <i class="fas fa-download me-2"></i>Export CSV
+                </a>
+                <a href="{{ url_for('items.import_inventory') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-upload me-2"></i>Import CSV
+                </a>
                 <a href="{{ url_for('items.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>Add Item
-                </a>
-                <a href="{{ url_for('items.import_pdf') }}" class="btn btn-secondary">
-                    <i class="fas fa-file-upload me-2"></i>Import PDF
                 </a>
             </div>
         </div>
