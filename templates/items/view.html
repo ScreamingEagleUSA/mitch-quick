@@ -134,93 +134,6 @@
                     </dl>
                 </div>
             </div>
-        </div>
-
-        <!-- Summary & Partners -->
-        <div class="col-md-4">
-            <!-- Financial Summary -->
-            {% if item.status.value in ['sold', 'won'] %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-calculator me-2"></i>Financial Summary
-                    </h6>
-                </div>
-                <div class="card-body">
-                    {% if item.gross_profit %}
-                    <div class="d-flex justify-content-between">
-                        <span>Gross Profit:</span>
-                        <span class="{% if item.gross_profit and item.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
-                            ${{ "%.2f"|format(item.gross_profit or 0) }}
-                        </span>
-                    </div>
-                    {% endif %}
-                    
-                    {% if item.net_profit %}
-                    <div class="d-flex justify-content-between">
-                        <span>Net Profit:</span>
-                        <span class="{% if item.net_profit and item.net_profit > 0 %}text-success{% else %}text-danger{% endif %}">
-                            ${{ "%.2f"|format(item.net_profit or 0) }}
-                        </span>
-                    </div>
-                    {% endif %}
-                    
-                    {% if item.roi_percentage %}
-                    <div class="d-flex justify-content-between">
-                        <span>ROI:</span>
-                        <span class="{% if item.roi_percentage and item.roi_percentage > 0 %}text-success{% else %}text-danger{% endif %}">
-                            {{ "%.1f"|format(item.roi_percentage or 0) }}%
-                        </span>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Partners -->
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-users me-2"></i>Partners
-                    </h6>
-                </div>
-                <div class="card-body">
-                    {% if item.partners %}
-                        {% for partnership in item.partners %}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span>{{ partnership.partner.name }}</span>
-                            <div>
-                                <span class="badge bg-primary me-2">{{ "%.1f"|format(partnership.pct_share) }}%</span>
-                                {% if item.net_profit %}
-                                <span class="badge bg-success">
-                                    ${{ "%.2f"|format(partnership.calculate_partner_share()) }}
-                                </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                        
-                        {% set total_percentage = item.partners|sum(attribute='pct_share') %}
-                        <hr>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <strong>Your Share ({{ "%.1f"|format(100 - total_percentage) }}%)</strong>
-                            {% if item.net_profit %}
-                            <span class="badge bg-primary">
-                                ${{ "%.2f"|format((item.net_profit or 0) * (100 - total_percentage|float) / 100) }}
-                            </span>
-                            {% endif %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted">No partners assigned to this item.</p>
-                    {% endif %}
-                    
-                    <div class="d-grid mt-3">
-                        <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-edit me-1"></i>Manage Partners
-                        </a>
-                    </div>
-                </div>
-            </div>
 
             <!-- Expenses Section -->
             <div class="card mt-4">
@@ -362,6 +275,95 @@
                 </div>
             </div>
             {% endif %}
+        </div>
+
+        <!-- Summary & Partners -->
+        <div class="col-md-4">
+            <!-- Financial Summary -->
+            {% if item.status.value in ['sold', 'won'] %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-calculator me-2"></i>Financial Summary
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if item.gross_profit %}
+                    <div class="d-flex justify-content-between">
+                        <span>Gross Profit:</span>
+                        <span class="{% if item.gross_profit and item.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ "%.2f"|format(item.gross_profit or 0) }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.net_profit %}
+                    <div class="d-flex justify-content-between">
+                        <span>Net Profit:</span>
+                        <span class="{% if item.net_profit and item.net_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ "%.2f"|format(item.net_profit or 0) }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.roi_percentage %}
+                    <div class="d-flex justify-content-between">
+                        <span>ROI:</span>
+                        <span class="{% if item.roi_percentage and item.roi_percentage > 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ "%.1f"|format(item.roi_percentage or 0) }}%
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Partners -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>Partners
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if item.partners %}
+                        {% for partnership in item.partners %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ partnership.partner.name }}</span>
+                            <div>
+                                <span class="badge bg-primary me-2">{{ "%.1f"|format(partnership.pct_share) }}%</span>
+                                {% if item.net_profit %}
+                                <span class="badge bg-success">
+                                    ${{ "%.2f"|format(partnership.calculate_partner_share()) }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% set total_percentage = item.partners|sum(attribute='pct_share') %}
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>Your Share ({{ "%.1f"|format(100 - total_percentage) }}%)</strong>
+                            {% if item.net_profit %}
+                            <span class="badge bg-primary">
+                                ${{ "%.2f"|format((item.net_profit or 0) * (100 - total_percentage|float) / 100) }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No partners assigned to this item.</p>
+                    {% endif %}
+                    
+                    <div class="d-grid mt-3">
+                        <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit me-1"></i>Manage Partners
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+
         </div>
     </div>
 </div>
