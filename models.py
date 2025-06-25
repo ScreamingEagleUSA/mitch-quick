@@ -86,7 +86,7 @@ class Item(db.Model):
     @property
     def total_expenses(self):
         """Calculate total itemized expenses"""
-        return sum(float(expense.amount) for expense in self.expenses)
+        return float(sum(expense.amount for expense in self.expenses))
 
     @property
     def gross_profit(self):

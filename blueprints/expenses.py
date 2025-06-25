@@ -44,6 +44,9 @@ def index():
 @require_login
 def create():
     """Create new expense"""
+    # Get item_id from query parameter if provided
+    item_id = request.args.get('item_id', type=int)
+    
     if request.method == 'POST':
         try:
             expense = ItemExpense(
@@ -66,7 +69,7 @@ def create():
             return redirect(request.url)
     
     items = Item.query.order_by(Item.title).all()
-    return render_template('expenses/form.html', items=items)
+    return render_template('expenses/form.html', items=items, selected_item_id=item_id)
 
 @expenses_bp.route('/<int:expense_id>/edit', methods=['GET', 'POST'])
 @require_login
