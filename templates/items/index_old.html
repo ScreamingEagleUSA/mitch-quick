@@ -67,7 +67,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-list me-2"></i>Items ({{ items|length if items else 0 }})
+                    <i class="fas fa-list me-2"></i>Items ({{ items.total if items.items else 0 }})
                 </h5>
                 <div class="btn-group">
                     <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllBtn">
@@ -79,7 +79,7 @@
                 </div>
             </div>
             <div class="card-body">
-                {% if items %}
+                {% if items.items %}
                     <!-- Bulk Actions Bar -->
                     <div id="bulkActionsBar" class="alert alert-info d-none mb-3">
                         <div class="row align-items-center">
@@ -123,116 +123,165 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for item in items %}
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" name="selected_items" value="{{ item.id }}" 
-                                               class="form-check-input item-checkbox">
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-start">
-                                            {% if item.lot_number %}
-                                            <span class="badge bg-secondary me-2 mt-1">#{{ item.lot_number }}</span>
+                                {% for item in items.items %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="selected_items" value="{{ item.id }}" 
+                                           class="form-check-input item-checkbox">
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-start">
+                                        {% if item.lot_number %}
+                                        <span class="badge bg-secondary me-2 mt-1">#{{ item.lot_number }}</span>
+                                        {% endif %}
+                                        <div>
+                                            <h6 class="mb-1">{{ item.title }}</h6>
+                                            {% if item.description %}
+                                            <small class="text-muted">{{ item.description[:80] }}{% if item.description|length > 80 %}...{% endif %}</small>
                                             {% endif %}
-                                            <div>
-                                                <h6 class="mb-1">{{ item.title }}</h6>
-                                                {% if item.description %}
-                                                <small class="text-muted">{{ item.description[:80] }}{% if item.description|length > 80 %}...{% endif %}</small>
-                                                {% endif %}
-                                            </div>
                                         </div>
-                                    </td>
-                                    <td>
-                                        {% if item.auction %}
-                                            <strong>{{ item.auction.title }}</strong><br>
-                                            <small class="text-muted">{{ item.auction.date.strftime('%m/%d/%Y') }}</small>
-                                        {% else %}
-                                            <span class="text-muted">No auction</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% set status_colors = {
-                                            'watch': 'secondary',
-                                            'won': 'info',
-                                            'listed': 'warning',
-                                            'sold': 'success'
-                                        } %}
-                                        <span class="badge bg-{{ status_colors[item.status.value] }}">
-                                            {{ item.status.value.title() }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if item.status.value == 'watch' %}
-                                            <small class="text-muted">
-                                                Max: ${{ "%.2f"|format(item.planned_max_bid) if item.planned_max_bid else 'N/A' }}<br>
-                                                Target: ${{ "%.2f"|format(item.target_resale_price) if item.target_resale_price else 'N/A' }}
-                                            </small>
-                                        {% elif item.status.value in ['won', 'listed'] %}
-                                            <small class="text-muted">
-                                                Paid: ${{ "%.2f"|format(item.purchase_price) if item.purchase_price else 'N/A' }}<br>
-                                                {% if item.refurb_cost and item.refurb_cost > 0 %}
-                                                Refurb: ${{ "%.2f"|format(item.refurb_cost) }}
-                                                {% endif %}
-                                            </small>
-                                        {% elif item.status.value == 'sold' %}
-                                            <small class="text-muted">
-                                                Paid: ${{ "%.2f"|format(item.purchase_price) if item.purchase_price else 'N/A' }}<br>
-                                                Sold: ${{ "%.2f"|format(item.sale_price) if item.sale_price else 'N/A' }}
-                                            </small>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if item.status.value == 'sold' and item.net_profit() is not none %}
-                                            <strong class="{{ 'text-success' if item.net_profit() >= 0 else 'text-danger' }}">
-                                                ${{ "%.2f"|format(item.net_profit()) }}
-                                            </strong>
-                                            {% if item.roi_percentage() is not none %}
-                                            <br><small class="{{ 'text-success' if item.roi_percentage() >= 0 else 'text-danger' }}">
-                                                {{ "%.1f"|format(item.roi_percentage()) }}% ROI
-                                            </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.auction %}
+                                        <strong>{{ item.auction.title }}</strong><br>
+                                        <small class="text-muted">{{ item.auction.date.strftime('%m/%d/%Y') }}</small>
+                                    {% else %}
+                                        <span class="text-muted">No auction</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% set status_colors = {
+                                        'watch': 'secondary',
+                                        'won': 'info',
+                                        'listed': 'warning',
+                                        'sold': 'success'
+                                    } %}
+                                    <span class="badge bg-{{ status_colors[item.status.value] }}">
+                                        {{ item.status.value.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if item.status.value == 'watch' %}
+                                        <small class="text-muted">
+                                            Max: ${{ "%.2f"|format(item.planned_max_bid) if item.planned_max_bid else 'N/A' }}<br>
+                                            Target: ${{ "%.2f"|format(item.target_resale_price) if item.target_resale_price else 'N/A' }}
+                                        </small>
+                                    {% elif item.status.value in ['won', 'listed'] %}
+                                        <small class="text-muted">
+                                            Paid: ${{ "%.2f"|format(item.purchase_price) if item.purchase_price else 'N/A' }}<br>
+                                            {% if item.refurb_cost and item.refurb_cost > 0 %}
+                                            Refurb: ${{ "%.2f"|format(item.refurb_cost) }}
                                             {% endif %}
-                                        {% elif item.status.value in ['won', 'listed'] and item.target_resale_price and item.purchase_price %}
-                                            {% set estimated_profit = item.target_resale_price - item.purchase_price - (item.refurb_cost or 0) %}
-                                            <small class="text-muted">
-                                                Est: ${{ "%.2f"|format(estimated_profit) }}
-                                            </small>
-                                        {% else %}
-                                            <span class="text-muted">-</span>
+                                        </small>
+                                    {% elif item.status.value == 'sold' %}
+                                        <small class="text-muted">
+                                            Paid: ${{ "%.2f"|format(item.purchase_price) if item.purchase_price else 'N/A' }}<br>
+                                            Sold: ${{ "%.2f"|format(item.sale_price) if item.sale_price else 'N/A' }}
+                                        </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.status.value == 'sold' and item.net_profit is not none %}
+                                        <strong class="{{ 'text-success' if item.net_profit >= 0 else 'text-danger' }}">
+                                            ${{ "%.2f"|format(item.net_profit) }}
+                                        </strong>
+                                        {% if item.roi_percentage is not none %}
+                                        <br><small class="{{ 'text-success' if item.roi_percentage >= 0 else 'text-danger' }}">
+                                            {{ "%.1f"|format(item.roi_percentage) }}% ROI
+                                        </small>
                                         {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ url_for('items.edit', item_id=item.id) }}" 
-                                               class="btn btn-outline-primary">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button class="btn btn-outline-danger" 
-                                                    onclick="confirmDelete('{{ item.id }}', '{{ item.title }}')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
-                        <h4 class="text-muted">No items found</h4>
-                        {% if status_filter != 'all' or auction_filter != 'all' %}
-                            <p class="text-muted">Try adjusting your filters or <a href="{{ url_for('items.index') }}">view all items</a>.</p>
-                        {% else %}
-                            <p class="text-muted">Get started by adding your first item.</p>
-                            <a href="{{ url_for('items.create') }}" class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>Add Your First Item
-                            </a>
+                                    {% elif item.status.value in ['won', 'listed'] and item.target_resale_price and item.purchase_price %}
+                                        {% set estimated_profit = item.target_resale_price - item.purchase_price - (item.refurb_cost or 0) %}
+                                        <small class="text-muted">
+                                            Est: ${{ "%.2f"|format(estimated_profit) }}
+                                        </small>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('items.edit', item_id=item.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if item.status.value == 'sold' and item.partners %}
+                                        <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-users"></i>
+                                        </a>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                hx-post="{{ url_for('items.update_price_suggestion', item_id=item.id) }}"
+                                                hx-swap="none"
+                                                title="Update eBay Price">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmDelete('{{ item.id }}', '{{ item.title }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if items.pages > 1 %}
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if items.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('items.index', page=items.prev_num, status=status_filter, auction=auction_filter) }}">Previous</a>
+                        </li>
                         {% endif %}
-                    </div>
+
+                        {% for page_num in items.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != items.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('items.index', page=page_num, status=status_filter, auction=auction_filter) }}">{{ page_num }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if items.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('items.index', page=items.next_num, status=status_filter, auction=auction_filter) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
                 {% endif %}
-            </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No items found</h4>
+                    {% if status_filter != 'all' or auction_filter != 'all' %}
+                        <p class="text-muted">Try adjusting your filters or <a href="{{ url_for('items.index') }}">view all items</a>.</p>
+                    {% else %}
+                        <p class="text-muted">Get started by adding your first item.</p>
+                        <a href="{{ url_for('items.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add Your First Item
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
+    </div>
     </form>
 </div>
 
@@ -365,5 +414,24 @@ function confirmBulkAction() {
     
     return confirm(message);
 }
+
+// HTMX event handlers for price updates
+document.body.addEventListener('htmx:responseError', function(evt) {
+    if (evt.detail.pathInfo.requestPath.includes('update-price')) {
+        alert('Error updating price. Please try again.');
+    }
+});
+
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.xhr.status === 200 && evt.detail.pathInfo.requestPath.includes('update-price')) {
+        const response = JSON.parse(evt.detail.xhr.responseText);
+        if (response.success) {
+            // Refresh the page to show updated price
+            location.reload();
+        } else {
+            alert('Error: ' + response.error);
+        }
+    }
+});
 </script>
 {% endblock %}
