@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required
+from replit_auth import require_login
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os

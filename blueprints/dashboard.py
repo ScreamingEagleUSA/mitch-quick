@@ -1,16 +1,17 @@
 from flask import Blueprint, render_template, request, jsonify
-from flask_login import login_required
+from flask_login import current_user
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from models import Auction, Item, Partner, ItemPartner, ItemStatus
 from utils.profit_calculations import calculate_portfolio_metrics
 from utils.ebay_api import update_all_watchlist_prices
+from replit_auth import require_login
 from app import db
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
 @dashboard_bp.route('/')
-@login_required
+@require_login
 def index():
     """Main dashboard"""
     # Get all items for portfolio metrics

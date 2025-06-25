@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, send_file, flash, redirect, url_for
-from flask_login import login_required
+from replit_auth import require_login
 from datetime import datetime, timedelta
 import io
 import csv
