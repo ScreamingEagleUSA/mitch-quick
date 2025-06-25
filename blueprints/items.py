@@ -321,7 +321,6 @@ def watchlist():
     return render_template('items/watchlist.html', items=items, auctions=auctions)
 
 @items_bp.route('/inventory')
-@require_login
 def inventory():
     """Show inventory (won items)"""
     items = Item.query.filter_by(status=ItemStatus.WON).order_by(Item.updated_at.desc()).all()
@@ -329,7 +328,6 @@ def inventory():
     return render_template('items/inventory.html', items=items)
 
 @items_bp.route('/sold')
-@require_login
 def sold():
     """Show sold items"""
     items = Item.query.filter_by(status=ItemStatus.SOLD).order_by(Item.sale_date.desc(), Item.updated_at.desc()).all()

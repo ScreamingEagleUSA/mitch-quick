@@ -48,7 +48,7 @@
                             {% set total_purchase = total_purchase + item.purchase_price %}
                         {% endif %}
                     {% endfor %}
-                    <h5 class="card-title">${{ "%.2f"|format(total_purchase) }}</h5>
+                    <h5 class="card-title">${{ "%.2f"|format(total_purchase or 0) }}</h5>
                     <p class="card-text text-muted">Total Invested</p>
                 </div>
             </div>
@@ -63,7 +63,7 @@
                             {% set total_target = total_target + item.target_resale_price %}
                         {% endif %}
                     {% endfor %}
-                    <h5 class="card-title">${{ "%.2f"|format(total_target) }}</h5>
+                    <h5 class="card-title">${{ "%.2f"|format(total_target or 0) }}</h5>
                     <p class="card-text text-muted">Target Value</p>
                 </div>
             </div>

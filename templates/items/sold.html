@@ -34,7 +34,8 @@
             <div class="card">
                 <div class="card-body text-center">
                     <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
-                    <h5 class="card-title">${{ "%.2f"|format(items|sum(attribute='sale_price')|float) }}</h5>
+                    {% set total_revenue = items|selectattr('sale_price')|sum(attribute='sale_price') %}
+                    <h5 class="card-title">${{ "%.2f"|format(total_revenue or 0) }}</h5>
                     <p class="card-text text-muted">Total Revenue</p>
                 </div>
             </div>

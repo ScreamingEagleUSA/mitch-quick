@@ -11,7 +11,6 @@ from app import db
 dashboard_bp = Blueprint('dashboard', __name__)
 
 @dashboard_bp.route('/')
-@require_login
 def index():
     """Main dashboard"""
     # Get all items for portfolio metrics

@@ -34,4 +34,4 @@ def index():
         return redirect(url_for('dashboard.index'))
     else:
         # User is not logged in, show landing page
-        return render_template('landing.html')
+        return render_template('auth/landing.html')
