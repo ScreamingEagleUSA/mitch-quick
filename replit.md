@@ -129,6 +129,11 @@ Mitch Quick is a comprehensive web application for managing auction flipping bus
 
 ## Recent Changes
 
+- June 25, 2025: Added bulk select and delete functionality for items with status change options
+- June 25, 2025: Fixed PDF import session size limits using temporary file storage approach
+- June 25, 2025: OCR system enhanced to handle auction catalog format with 122+ lots
+- June 25, 2025: Fixed all template TypeError issues with None values in sum operations
+- June 25, 2025: Resolved auction view and watchlist internal server errors completely
 - June 25, 2025: Fixed partner management system completely - internal server errors resolved
 - June 25, 2025: Added partner planning section for new items with workflow integration  
 - June 25, 2025: Fixed profit calculation templates (method vs property bug)
