@@ -4,7 +4,6 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
 from models import Item, Auction, Partner, ItemPartner, ItemStatus
-from utils.ocr_parser import process_uploaded_pdf
 from utils.ebay_api import ebay_api
 from app import db
 
