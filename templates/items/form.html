@@ -132,6 +132,64 @@
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <!-- Multiple Pieces Section -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="multiple_pieces" name="multiple_pieces" 
+                                                   {% if item and item.multiple_pieces %}checked{% endif %}>
+                                            <label class="form-check-label" for="multiple_pieces">
+                                                <strong>Multiple Pieces Item</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Check this if you bought bulk items to sell individually (e.g., lumber, electronics, etc.)</small>
+                                    </div>
+                                    <div class="card-body" id="multiple_pieces_section" style="{% if not item or not item.multiple_pieces %}display: none;{% endif %}">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="pieces_total" class="form-label">Total Number of Pieces <span class="text-danger">*</span></label>
+                                                <input type="number" class="form-control" id="pieces_total" name="pieces_total" 
+                                                       value="{{ item.pieces_total if item else '' }}" min="1" placeholder="e.g., 100">
+                                                <div class="form-text">How many individual pieces can be sold from this bulk purchase?</div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Cost per Piece</label>
+                                                <div class="form-control-plaintext" id="cost_per_piece_display">
+                                                    {% if item and item.cost_per_piece %}
+                                                        ${{ "%.2f"|format(item.cost_per_piece) }}
+                                                    {% else %}
+                                                        Will calculate automatically
+                                                    {% endif %}
+                                                </div>
+                                                <div class="form-text">Calculated as: (Purchase Price + Refurb Cost + Expenses) ÷ Total Pieces</div>
+                                            </div>
+                                        </div>
+                                        
+                                        {% if item and item.multiple_pieces %}
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="text-center">
+                                                    <strong>{{ item.pieces_remaining or item.pieces_total or 0 }}</strong><br>
+                                                    <small class="text-muted">Pieces Remaining</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="text-center">
+                                                    <strong>{{ item.pieces_sold or 0 }}</strong><br>
+                                                    <small class="text-muted">Pieces Sold</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="text-center">
+                                                    <strong>${{ "%.2f"|format(item.total_piece_sales_revenue) }}</strong><br>
+                                                    <small class="text-muted">Total Revenue</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -508,6 +566,61 @@ document.body.addEventListener('htmx:afterRequest', function(evt) {
         } else {
             alert('Could not fetch price suggestion');
         }
+    }
+    
+    // Multiple pieces functionality
+    const multiplePiecesCheckbox = document.getElementById('multiple_pieces');
+    const multiplePiecesSection = document.getElementById('multiple_pieces_section');
+    
+    if (multiplePiecesCheckbox && multiplePiecesSection) {
+        const piecesTotalInput = document.getElementById('pieces_total');
+        const purchasePriceInput = document.getElementById('purchase_price');
+        const refurbCostInput = document.getElementById('refurb_cost');
+        const costPerPieceDisplay = document.getElementById('cost_per_piece_display');
+        
+        // Toggle multiple pieces section
+        multiplePiecesCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                multiplePiecesSection.style.display = 'block';
+                if (piecesTotalInput) piecesTotalInput.required = true;
+            } else {
+                multiplePiecesSection.style.display = 'none';
+                if (piecesTotalInput) {
+                    piecesTotalInput.required = false;
+                    piecesTotalInput.value = '';
+                }
+                updateCostPerPiece();
+            }
+        });
+        
+        // Calculate cost per piece
+        function updateCostPerPiece() {
+            if (!costPerPieceDisplay) return;
+            
+            if (multiplePiecesCheckbox.checked) {
+                const purchasePrice = parseFloat(purchasePriceInput?.value) || 0;
+                const refurbCost = parseFloat(refurbCostInput?.value) || 0;
+                const piecesTotal = parseInt(piecesTotalInput?.value) || 0;
+                
+                if (piecesTotal > 0) {
+                    const totalCost = purchasePrice + refurbCost;
+                    const costPerPiece = totalCost / piecesTotal;
+                    costPerPieceDisplay.textContent = '$' + costPerPiece.toFixed(2);
+                } else {
+                    costPerPieceDisplay.textContent = 'Enter total pieces to calculate';
+                }
+            } else {
+                costPerPieceDisplay.textContent = 'Will calculate automatically';
+            }
+        }
+        
+        // Update cost per piece when values change
+        if (piecesTotalInput) piecesTotalInput.addEventListener('input', updateCostPerPiece);
+        if (purchasePriceInput) purchasePriceInput.addEventListener('input', updateCostPerPiece);
+        if (refurbCostInput) refurbCostInput.addEventListener('input', updateCostPerPiece);
+        
+        // Initial calculation
+        updateCostPerPiece();
     }
 });
 </script>

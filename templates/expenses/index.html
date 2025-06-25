@@ -63,7 +63,7 @@
             <div class="card">
                 <div class="card-body text-center">
                     <i class="fas fa-receipt fa-2x text-primary mb-2"></i>
-                    <h5 class="card-title">{{ expenses.total }}</h5>
+                    <h5 class="card-title">{{ expense_count or 0 }}</h5>
                     <p class="card-text text-muted">Total Expenses</p>
                 </div>
             </div>
@@ -72,11 +72,7 @@
             <div class="card">
                 <div class="card-body text-center">
                     <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
-                    {% set total_amount = 0 %}
-                    {% for expense in expenses.items %}
-                        {% set total_amount = total_amount + (expense.amount or 0) %}
-                    {% endfor %}
-                    <h5 class="card-title">${{ "%.2f"|format(total_amount) }}</h5>
+                    <h5 class="card-title">${{ "%.2f"|format(total_expenses or 0) }}</h5>
                     <p class="card-text text-muted">Total Amount</p>
                 </div>
             </div>
@@ -86,8 +82,8 @@
                 <div class="card-body text-center">
                     <i class="fas fa-calendar fa-2x text-info mb-2"></i>
                     <h5 class="card-title">
-                        {% if expenses.items %}
-                            {{ expenses.items[0].date.strftime('%m/%d/%Y') }}
+                        {% if latest_date %}
+                            {{ latest_date.strftime('%m/%d/%Y') }}
                         {% else %}
                             N/A
                         {% endif %}

@@ -33,12 +33,25 @@ def index():
         ItemExpense.category.isnot(None)).all()
     categories = [cat[0] for cat in categories]
     
+    # Calculate summary statistics for all expenses (ignoring filters for summary)
+    total_expenses = float(db.session.query(db.func.sum(ItemExpense.amount)).scalar() or 0)
+    expense_count = ItemExpense.query.count()
+    avg_expense = total_expenses / expense_count if expense_count > 0 else 0
+    
+    # Get latest expense date
+    latest_expense = ItemExpense.query.order_by(ItemExpense.date.desc()).first()
+    latest_date = latest_expense.date if latest_expense else None
+    
     return render_template('expenses/index.html', 
                          expenses=expenses, 
                          items=items,
                          categories=categories,
                          item_filter=item_filter,
-                         category_filter=category_filter)
+                         category_filter=category_filter,
+                         total_expenses=total_expenses,
+                         expense_count=expense_count,
+                         avg_expense=avg_expense,
+                         latest_date=latest_date)
 
 @expenses_bp.route('/create', methods=['GET', 'POST'])
 @require_login

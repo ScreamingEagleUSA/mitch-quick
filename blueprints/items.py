@@ -530,5 +530,5 @@ def sell_pieces(item_id):
             flash(f'Error recording sale: {str(e)}', 'danger')
             return redirect(request.url)
     
-    return render_template('items/sell_pieces.html', item=item)
+    return render_template('items/sell_pieces.html', item=item, datetime=datetime)
 
