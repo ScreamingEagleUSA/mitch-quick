@@ -64,22 +64,22 @@
                         
                         {% if item.planned_max_bid %}
                         <dt class="col-sm-3">Planned Max Bid:</dt>
-                        <dd class="col-sm-9">${{ "%.2f"|format(item.planned_max_bid) }}</dd>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.planned_max_bid or 0) }}</dd>
                         {% endif %}
                         
                         {% if item.target_resale_price %}
                         <dt class="col-sm-3">Target Resale:</dt>
-                        <dd class="col-sm-9">${{ "%.2f"|format(item.target_resale_price) }}</dd>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.target_resale_price or 0) }}</dd>
                         {% endif %}
                         
                         {% if item.purchase_price %}
                         <dt class="col-sm-3">Purchase Price:</dt>
-                        <dd class="col-sm-9">${{ "%.2f"|format(item.purchase_price) }}</dd>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.purchase_price or 0) }}</dd>
                         {% endif %}
                         
                         {% if item.refurb_cost %}
                         <dt class="col-sm-3">Refurb Cost:</dt>
-                        <dd class="col-sm-9">${{ "%.2f"|format(item.refurb_cost) }}</dd>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.refurb_cost or 0) }}</dd>
                         {% endif %}
                         
                         {% if item.list_date %}
@@ -99,17 +99,17 @@
                         
                         {% if item.sale_price %}
                         <dt class="col-sm-3">Sale Price:</dt>
-                        <dd class="col-sm-9">${{ "%.2f"|format(item.sale_price) }}</dd>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.sale_price or 0) }}</dd>
                         {% endif %}
                         
                         {% if item.sale_fees %}
                         <dt class="col-sm-3">Sale Fees:</dt>
-                        <dd class="col-sm-9">${{ "%.2f"|format(item.sale_fees) }}</dd>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.sale_fees or 0) }}</dd>
                         {% endif %}
                         
                         {% if item.shipping_cost %}
                         <dt class="col-sm-3">Shipping Cost:</dt>
-                        <dd class="col-sm-9">${{ "%.2f"|format(item.shipping_cost) }}</dd>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.shipping_cost or 0) }}</dd>
                         {% endif %}
                         
                         {% if item.multiple_pieces %}
@@ -126,7 +126,7 @@
                                     <strong>Remaining:</strong> {{ item.pieces_remaining or 0 }}
                                 </div>
                                 <div class="col-md-3">
-                                    <strong>Cost/Piece:</strong> ${{ "%.2f"|format(item.cost_per_piece() or 0) }}
+                                    <strong>Cost/Piece:</strong> ${{ "%.2f"|format(item.cost_per_piece or 0) }}
                                 </div>
                             </div>
                         </dd>
@@ -147,29 +147,29 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    {% if item.gross_profit() %}
+                    {% if item.gross_profit %}
                     <div class="d-flex justify-content-between">
                         <span>Gross Profit:</span>
-                        <span class="{% if item.gross_profit() and item.gross_profit() > 0 %}text-success{% else %}text-danger{% endif %}">
-                            ${{ "%.2f"|format(item.gross_profit() or 0) }}
+                        <span class="{% if item.gross_profit and item.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ "%.2f"|format(item.gross_profit or 0) }}
                         </span>
                     </div>
                     {% endif %}
                     
-                    {% if item.net_profit() %}
+                    {% if item.net_profit %}
                     <div class="d-flex justify-content-between">
                         <span>Net Profit:</span>
-                        <span class="{% if item.net_profit() and item.net_profit() > 0 %}text-success{% else %}text-danger{% endif %}">
-                            ${{ "%.2f"|format(item.net_profit() or 0) }}
+                        <span class="{% if item.net_profit and item.net_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ "%.2f"|format(item.net_profit or 0) }}
                         </span>
                     </div>
                     {% endif %}
                     
-                    {% if item.roi_percentage() %}
+                    {% if item.roi_percentage %}
                     <div class="d-flex justify-content-between">
                         <span>ROI:</span>
-                        <span class="{% if item.roi_percentage() and item.roi_percentage() > 0 %}text-success{% else %}text-danger{% endif %}">
-                            {{ "%.1f"|format(item.roi_percentage() or 0) }}%
+                        <span class="{% if item.roi_percentage and item.roi_percentage > 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ "%.1f"|format(item.roi_percentage or 0) }}%
                         </span>
                     </div>
                     {% endif %}
@@ -204,9 +204,9 @@
                         <hr>
                         <div class="d-flex justify-content-between align-items-center">
                             <strong>Your Share ({{ "%.1f"|format(100 - total_percentage) }}%)</strong>
-                            {% if item.net_profit() %}
+                            {% if item.net_profit %}
                             <span class="badge bg-primary">
-                                ${{ "%.2f"|format((item.net_profit() or 0) * (100 - total_percentage|float) / 100) }}
+                                ${{ "%.2f"|format((item.net_profit or 0) * (100 - total_percentage|float) / 100) }}
                             </span>
                             {% endif %}
                         </div>
@@ -272,7 +272,7 @@
                                 <tfoot>
                                     <tr class="table-info">
                                         <th colspan="3">Total Expenses:</th>
-                                        <th>${{ "%.2f"|format(item.total_expenses() or 0) }}</th>
+                                        <th>${{ "%.2f"|format(item.total_expenses or 0) }}</th>
                                         <th></th>
                                     </tr>
                                 </tfoot>

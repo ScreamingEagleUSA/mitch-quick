@@ -232,9 +232,9 @@
                             <div>
                                 <h6 class="mb-1">{{ item.title }}</h6>
                                 <small class="text-muted">
-                                    Max Bid: ${{ "%.2f"|format(item.planned_max_bid) if item.planned_max_bid else 'N/A' }}
+                                    Max Bid: ${{ "%.2f"|format(item.planned_max_bid or 0) if item.planned_max_bid else 'N/A' }}
                                     {% if item.target_resale_price %}
-                                    | Target: ${{ "%.2f"|format(item.target_resale_price) }}
+                                    | Target: ${{ "%.2f"|format(item.target_resale_price or 0) }}
                                     {% endif %}
                                 </small>
                             </div>
@@ -271,9 +271,9 @@
                             <div>
                                 <h6 class="mb-1">{{ item.title }}</h6>
                                 <small class="text-muted">
-                                    Paid: ${{ "%.2f"|format(item.purchase_price) if item.purchase_price else 'N/A' }}
+                                    Paid: ${{ "%.2f"|format(item.purchase_price or 0) if item.purchase_price else 'N/A' }}
                                     {% if item.refurb_cost and item.refurb_cost > 0 %}
-                                    | Refurb: ${{ "%.2f"|format(item.refurb_cost) }}
+                                    | Refurb: ${{ "%.2f"|format(item.refurb_cost or 0) }}
                                     {% endif %}
                                 </small>
                             </div>
@@ -309,8 +309,8 @@
                                 <h6 class="mb-1">{{ item.title }}</h6>
                                 <small class="text-muted">
                                     Sold: ${{ "%.2f"|format(item.sale_price or 0) }}
-                                    | Profit: <span class="{{ 'text-success' if item.net_profit() and item.net_profit() >= 0 else 'text-danger' }}">
-                                        ${{ "%.2f"|format(item.net_profit() or 0) }}
+                                    | Profit: <span class="{{ 'text-success' if item.net_profit and item.net_profit >= 0 else 'text-danger' }}">
+                                        ${{ "%.2f"|format(item.net_profit or 0) }}
                                     </span>
                                 </small>
                             </div>

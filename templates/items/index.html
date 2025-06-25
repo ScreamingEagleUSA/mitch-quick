@@ -167,8 +167,8 @@
                                     <td>
                                         {% if item.status.value == 'watch' %}
                                             <small class="text-muted">
-                                                Max: ${{ "%.2f"|format(item.planned_max_bid) if item.planned_max_bid else 'N/A' }}<br>
-                                                Target: ${{ "%.2f"|format(item.target_resale_price) if item.target_resale_price else 'N/A' }}
+                                                Max: ${{ "%.2f"|format(item.planned_max_bid or 0) if item.planned_max_bid else 'N/A' }}<br>
+                                                Target: ${{ "%.2f"|format(item.target_resale_price or 0) if item.target_resale_price else 'N/A' }}
                                             </small>
                                         {% elif item.status.value in ['won', 'listed'] %}
                                             <small class="text-muted">
