@@ -129,11 +129,14 @@ Mitch Quick is a comprehensive web application for managing auction flipping bus
 
 ## Recent Changes
 
+- June 25, 2025: Fixed partner management system completely - internal server errors resolved
+- June 25, 2025: Added partner planning section for new items with workflow integration  
+- June 25, 2025: Fixed profit calculation templates (method vs property bug)
+- June 25, 2025: Partner profit sharing now works with variable percentages for multiple partners
+- June 25, 2025: Fixed item creation data persistence and status selection issues
+- June 25, 2025: New items redirect to edit page for immediate partner setup
 - June 25, 2025: Migrated from custom authentication to Replit OpenID Connect system
-- June 25, 2025: Fixed multiple template errors (tojsonfilter → tojson, undefined moment function)
 - June 25, 2025: Added CSV import/export functionality for complete inventory management
-- June 25, 2025: Created missing inventory and sold items templates
-- June 25, 2025: Added export/import buttons to inventory management interface
 - June 25, 2025: eBay API integration ready (awaiting user credentials)
 
 ## Changelog
