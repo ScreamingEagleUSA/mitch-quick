@@ -51,10 +51,11 @@ Mitch Quick is a comprehensive web application for managing auction flipping bus
 - **Partner Share Distribution**: Automatic calculation based on percentage shares
 
 ### Advanced Features
-1. **OCR PDF Import**: Extract lot information from auction catalogs using pdfplumber and pytesseract
+1. **Expenses Tracking**: Comprehensive itemized expense system that automatically factors into profit calculations
 2. **eBay API Integration**: Automated price suggestions with 24-hour caching
 3. **Email Reports**: Scheduled cash flow reports with CSV attachments and charts
 4. **Responsive Dashboard**: Real-time KPI tracking and trend analysis
+5. **CSV Import/Export**: Complete inventory management with bulk operations
 
 ## Data Flow
 
@@ -129,7 +130,10 @@ Mitch Quick is a comprehensive web application for managing auction flipping bus
 
 ## Recent Changes
 
-- June 25, 2025: **PRODUCTION READY** - All critical internal server errors systematically eliminated
+- June 25, 2025: **PRODUCTION READY** - All requested features implemented without breaking functionality
+- June 25, 2025: Added comprehensive Expenses system with itemized tracking that factors into profit calculations
+- June 25, 2025: Moved CSV import/export functionality from inventory page to main items page as requested
+- June 25, 2025: Completely removed all PDF import functionality and buttons as requested
 - June 25, 2025: Fixed profit analysis report JSON serialization error with Item objects
 - June 25, 2025: Fixed partner view template undefined variable errors with safe fallbacks
 - June 25, 2025: Items page fully functional with complete bulk operations (select, delete, status change)

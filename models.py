@@ -84,11 +84,16 @@ class Item(db.Model):
     partners = db.relationship('ItemPartner', backref='item', lazy=True, cascade='all, delete-orphan')
     
     @property
+    def total_expenses(self):
+        """Calculate total itemized expenses"""
+        return sum(float(expense.amount) for expense in self.expenses)
+
+    @property
     def gross_profit(self):
-        """Calculate gross profit (sale_price - purchase_price - refurb_cost)"""
+        """Calculate gross profit (sale_price - purchase_price - refurb_cost - total_expenses)"""
         if not self.sale_price or not self.purchase_price:
             return None
-        return float(self.sale_price) - float(self.purchase_price) - float(self.refurb_cost or 0)
+        return float(self.sale_price) - float(self.purchase_price) - float(self.refurb_cost or 0) - self.total_expenses
     
     @property
     def net_profit(self):

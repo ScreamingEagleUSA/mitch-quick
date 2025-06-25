@@ -12,12 +12,14 @@ from blueprints.auctions import auctions_bp
 from blueprints.items import items_bp
 from blueprints.partners import partners_bp
 from blueprints.reports import reports_bp
+from blueprints.expenses import expenses_bp
 
 app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
 app.register_blueprint(auctions_bp, url_prefix='/auctions')
 app.register_blueprint(items_bp, url_prefix='/items')
 app.register_blueprint(partners_bp, url_prefix='/partners')
 app.register_blueprint(reports_bp, url_prefix='/reports')
+app.register_blueprint(expenses_bp, url_prefix='/expenses')
 
 # Make session permanent
 @app.before_request
