@@ -42,15 +42,7 @@
             <div class="card">
                 <div class="card-body text-center">
                     <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
-                    {% set total_invested = 0 %}
-                    {% for item in items %}
-                        {% set item_cost = (item.purchase_price or 0) + (item.refurb_cost or 0) %}
-                        {% if item.total_expenses %}
-                            {% set item_cost = item_cost + (item.total_expenses or 0) %}
-                        {% endif %}
-                        {% set total_invested = total_invested + item_cost %}
-                    {% endfor %}
-                    <h5 class="card-title">${{ "%.2f"|format(total_invested) }}</h5>
+                    <h5 class="card-title">${{ "%.2f"|format(total_invested or 0) }}</h5>
                     <p class="card-text text-muted">Total Invested</p>
                 </div>
             </div>
