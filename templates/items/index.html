@@ -61,25 +61,74 @@
         </div>
     </div>
 
-    <!-- Items List -->
-    <div class="card">
-        <div class="card-body">
-            {% if items.items %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
+    <!-- Bulk Actions Form -->
+    <form id="bulkForm" method="POST" action="{{ url_for('items.bulk_action') }}">
+        <!-- Items List -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Items ({{ items.total if items.items else 0 }})
+                </h5>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllBtn">
+                        <i class="fas fa-check-square me-1"></i>Select All
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllBtn">
+                        <i class="fas fa-square me-1"></i>Deselect All
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if items.items %}
+                    <!-- Bulk Actions Bar -->
+                    <div id="bulkActionsBar" class="alert alert-info d-none mb-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <span id="selectedCount">0</span> items selected
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <div class="btn-group">
+                                    <select name="action" class="form-select form-select-sm me-2" style="width: auto;">
+                                        <option value="">Choose action...</option>
+                                        <option value="status_change">Change Status</option>
+                                        <option value="delete">Delete Items</option>
+                                    </select>
+                                    <select name="new_status" class="form-select form-select-sm me-2 d-none" id="statusSelect" style="width: auto;">
+                                        <option value="watch">Watch</option>
+                                        <option value="won">Won</option>
+                                        <option value="listed">Listed</option>
+                                        <option value="sold">Sold</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-primary" onclick="return confirmBulkAction()">
+                                        Apply
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox" id="selectAllCheckbox" class="form-check-input">
+                                    </th>
+                                    <th>Item</th>
+                                    <th>Auction</th>
+                                    <th>Status</th>
+                                    <th>Financial</th>
+                                    <th>Profit</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items.items %}
                             <tr>
-                                <th>Item</th>
-                                <th>Auction</th>
-                                <th>Status</th>
-                                <th>Financial</th>
-                                <th>Profit</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in items.items %}
-                            <tr>
+                                <td>
+                                    <input type="checkbox" name="selected_items" value="{{ item.id }}" 
+                                           class="form-check-input item-checkbox">
+                                </td>
                                 <td>
                                     <div class="d-flex align-items-start">
                                         {% if item.lot_number %}
@@ -265,6 +314,105 @@ function confirmDelete(itemId, itemTitle) {
     document.getElementById('deleteItemTitle').textContent = itemTitle;
     document.getElementById('deleteForm').action = `/items/${itemId}/delete`;
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Bulk selection functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const deselectAllBtn = document.getElementById('deselectAllBtn');
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCount = document.getElementById('selectedCount');
+    const actionSelect = document.querySelector('select[name="action"]');
+    const statusSelect = document.getElementById('statusSelect');
+
+    function updateBulkActionsBar() {
+        const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+        const count = checkedBoxes.length;
+        
+        if (count > 0) {
+            bulkActionsBar.classList.remove('d-none');
+            selectedCount.textContent = count;
+        } else {
+            bulkActionsBar.classList.add('d-none');
+        }
+        
+        // Update select all checkbox
+        if (selectAllCheckbox) {
+            selectAllCheckbox.indeterminate = count > 0 && count < itemCheckboxes.length;
+            selectAllCheckbox.checked = count === itemCheckboxes.length && count > 0;
+        }
+    }
+
+    // Select/deselect all functionality
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            itemCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkActionsBar();
+        });
+    }
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', function() {
+            itemCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateBulkActionsBar();
+        });
+    }
+
+    if (deselectAllBtn) {
+        deselectAllBtn.addEventListener('click', function() {
+            itemCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateBulkActionsBar();
+        });
+    }
+
+    // Individual checkbox changes
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActionsBar);
+    });
+
+    // Show/hide status select based on action
+    if (actionSelect) {
+        actionSelect.addEventListener('change', function() {
+            if (this.value === 'status_change') {
+                statusSelect.classList.remove('d-none');
+            } else {
+                statusSelect.classList.add('d-none');
+            }
+        });
+    }
+});
+
+function confirmBulkAction() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    const action = document.querySelector('select[name="action"]').value;
+    
+    if (checkedBoxes.length === 0) {
+        alert('Please select at least one item.');
+        return false;
+    }
+    
+    if (!action) {
+        alert('Please select an action.');
+        return false;
+    }
+    
+    let message = '';
+    if (action === 'delete') {
+        message = `Are you sure you want to delete ${checkedBoxes.length} item(s)? This action cannot be undone.`;
+    } else if (action === 'status_change') {
+        const newStatus = document.getElementById('statusSelect').value;
+        message = `Are you sure you want to change the status of ${checkedBoxes.length} item(s) to "${newStatus}"?`;
+    }
+    
+    return confirm(message);
 }
 
 // HTMX event handlers for price updates
