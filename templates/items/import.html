@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Import PDF - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-file-upload me-2"></i>Import PDF Lot Sheet
+            </h1>
+            <p class="text-muted">Upload auction lot sheets to automatically extract items</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Items
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Instructions -->
+            <div class="alert alert-info mb-4">
+                <h5 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>How PDF Import Works
+                </h5>
+                <ul class="mb-0">
+                    <li>Upload a PDF auction lot sheet or catalog</li>
+                    <li>Our OCR system will extract lot numbers, titles, and descriptions</li>
+                    <li>Review the extracted items before importing</li>
+                    <li>Items will be added to your selected auction as "Watchlist" items</li>
+                </ul>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>Upload PDF File
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="auction_id" class="form-label">Select Auction <span class="text-danger">*</span></label>
+                            <select class="form-select" id="auction_id" name="auction_id" required>
+                                <option value="">Choose the auction for these items...</option>
+                                {% for auction in auctions %}
+                                <option value="{{ auction.id }}">
+                                    {{ auction.title }} ({{ auction.date.strftime('%B %d, %Y') }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Items will be added to this auction as watchlist items</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="pdf_file" class="form-label">PDF File <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" id="pdf_file" name="pdf_file" 
+                                   accept=".pdf" required>
+                            <div class="form-text">Maximum file size: 16MB. Only PDF files are accepted.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Upload & Process
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Tips for Best Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">
+                                <i class="fas fa-check me-1"></i>Good PDF Files:
+                            </h6>
+                            <ul class="text-muted small">
+                                <li>Clear, high-resolution scans</li>
+                                <li>Text-based PDFs (not just images)</li>
+                                <li>Well-organized lot listings</li>
+                                <li>Consistent formatting</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">
+                                <i class="fas fa-exclamation-triangle me-1"></i>May Need Review:
+                            </h6>
+                            <ul class="text-muted small">
+                                <li>Hand-written lot sheets</li>
+                                <li>Poor quality scans</li>
+                                <li>Complex multi-column layouts</li>
+                                <li>Mixed content (images + text)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- No Auctions Warning -->
+            {% if not auctions %}
+            <div class="alert alert-warning mt-4">
+                <h5 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle me-2"></i>No Auctions Available
+                </h5>
+                <p class="mb-0">
+                    You need to create at least one auction before importing items. 
+                    <a href="{{ url_for('auctions.create') }}" class="alert-link">Create your first auction</a> now.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// File upload validation
+document.getElementById('pdf_file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        // Check file type
+        if (!file.type.includes('pdf')) {
+            alert('Please select a PDF file.');
+            this.value = '';
+            return;
+        }
+
+        // Check file size (16MB = 16 * 1024 * 1024 bytes)
+        const maxSize = 16 * 1024 * 1024;
+        if (file.size > maxSize) {
+            alert('File size must be less than 16MB.');
+            this.value = '';
+            return;
+        }
+
+        // Show file info
+        const fileName = file.name;
+        const fileSize = (file.size / 1024 / 1024).toFixed(2);
+        console.log(`Selected: ${fileName} (${fileSize} MB)`);
+    }
+});
+
+// Form submission handling
+document.querySelector('form').addEventListener('submit', function(e) {
+    const auctionSelect = document.getElementById('auction_id');
+    const fileInput = document.getElementById('pdf_file');
+
+    if (!auctionSelect.value) {
+        e.preventDefault();
+        alert('Please select an auction.');
+        auctionSelect.focus();
+        return;
+    }
+
+    if (!fileInput.files[0]) {
+        e.preventDefault();
+        alert('Please select a PDF file to upload.');
+        fileInput.focus();
+        return;
+    }
+
+    // Show processing message
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

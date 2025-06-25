@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Auctions - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-calendar-alt me-2"></i>Auctions
+            </h1>
+            <p class="text-muted">Manage your auction events and schedules</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('auctions.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Auction
+            </a>
+        </div>
+    </div>
+
+    <!-- Auctions List -->
+    <div class="card">
+        <div class="card-body">
+            {% if auctions.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Date</th>
+                                <th>Location</th>
+                                <th>Items</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for auction in auctions.items %}
+                            <tr>
+                                <td>
+                                    <h6 class="mb-1">{{ auction.title }}</h6>
+                                    {% if auction.notes %}
+                                    <small class="text-muted">{{ auction.notes[:100] }}{% if auction.notes|length > 100 %}...{% endif %}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {% if auction.date >= today %}bg-primary{% else %}bg-secondary{% endif %}">
+                                        {{ auction.date.strftime('%B %d, %Y') }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if auction.location %}
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ auction.location }}
+                                    {% else %}
+                                        <span class="text-muted">No location</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ auction.items|length }} items</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('auctions.view', auction_id=auction.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('auctions.edit', auction_id=auction.id) }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if auction.url %}
+                                        <a href="{{ auction.url }}" target="_blank" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmDelete('{{ auction.id }}', '{{ auction.title }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if auctions.pages > 1 %}
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if auctions.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('auctions.index', page=auctions.prev_num) }}">Previous</a>
+                        </li>
+                        {% endif %}
+
+                        {% for page_num in auctions.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != auctions.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('auctions.index', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if auctions.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('auctions.index', page=auctions.next_num) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No auctions found</h4>
+                    <p class="text-muted">Get started by adding your first auction.</p>
+                    <a href="{{ url_for('auctions.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add Your First Auction
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the auction "<span id="deleteAuctionTitle"></span>"?</p>
+                <p class="text-danger"><small>This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function confirmDelete(auctionId, auctionTitle) {
+    document.getElementById('deleteAuctionTitle').textContent = auctionTitle;
+    document.getElementById('deleteForm').action = `/auctions/${auctionId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}{{ auction.title }} - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-calendar-alt me-2"></i>{{ auction.title }}
+            </h1>
+            <p class="text-muted">Auction details and items</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('auctions.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back
+                </a>
+                <a href="{{ url_for('auctions.edit', auction_id=auction.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit me-2"></i>Edit
+                </a>
+                {% if auction.url %}
+                <a href="{{ auction.url }}" target="_blank" class="btn btn-info">
+                    <i class="fas fa-external-link-alt me-2"></i>View Online
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Auction Details -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Auction Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Date:</strong><br>
+                        <span class="badge {% if auction.date >= today %}bg-primary{% else %}bg-secondary{% endif %} fs-6">
+                            {{ auction.date.strftime('%A, %B %d, %Y') }}
+                        </span>
+                    </div>
+
+                    {% if auction.location %}
+                    <div class="mb-3">
+                        <strong>Location:</strong><br>
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ auction.location }}
+                    </div>
+                    {% endif %}
+
+                    {% if auction.url %}
+                    <div class="mb-3">
+                        <strong>Website:</strong><br>
+                        <a href="{{ auction.url }}" target="_blank" class="text-decoration-none">
+                            <i class="fas fa-external-link-alt me-1"></i>View Auction Listing
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if auction.notes %}
+                    <div class="mb-3">
+                        <strong>Notes:</strong><br>
+                        <p class="text-muted mb-0">{{ auction.notes }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="text-muted small">
+                        <i class="fas fa-clock me-1"></i>Created: {{ auction.created_at.strftime('%m/%d/%Y') }}
+                        {% if auction.updated_at != auction.created_at %}
+                        <br><i class="fas fa-edit me-1"></i>Updated: {{ auction.updated_at.strftime('%m/%d/%Y') }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Quick Stats
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-primary">{{ items|length }}</h4>
+                            <small class="text-muted">Total Items</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{{ items|selectattr('status.value', 'equalto', 'sold')|list|length }}</h4>
+                            <small class="text-muted">Sold</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-info">{{ items|selectattr('status.value', 'equalto', 'won')|list|length }}</h4>
+                            <small class="text-muted">Won</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-warning">{{ items|selectattr('status.value', 'equalto', 'watch')|list|length }}</h4>
+                            <small class="text-muted">Watching</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items List -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-box me-2"></i>Items ({{ items|length }})
+                    </h5>
+                    <a href="{{ url_for('items.create') }}?auction_id={{ auction.id }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i>Add Item
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Lot #</th>
+                                        <th>Item</th>
+                                        <th>Status</th>
+                                        <th>Max Bid</th>
+                                        <th>Target Price</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in items %}
+                                    <tr>
+                                        <td>
+                                            {% if item.lot_number %}
+                                                <span class="badge bg-secondary">{{ item.lot_number }}</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <h6 class="mb-1">{{ item.title }}</h6>
+                                            {% if item.description %}
+                                            <small class="text-muted">{{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% set status_colors = {
+                                                'watch': 'secondary',
+                                                'won': 'info',
+                                                'listed': 'warning',
+                                                'sold': 'success'
+                                            } %}
+                                            <span class="badge bg-{{ status_colors[item.status.value] }}">
+                                                {{ item.status.value.title() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if item.planned_max_bid %}
+                                                ${{ "%.2f"|format(item.planned_max_bid) }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.target_resale_price %}
+                                                ${{ "%.2f"|format(item.target_resale_price) }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('items.edit', item_id=item.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                {% if item.status.value == 'sold' %}
+                                                <button class="btn btn-sm btn-outline-success" 
+                                                        onclick="showProfitDetails({{ item.id }})">
+                                                    <i class="fas fa-dollar-sign"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No items added yet</h5>
+                            <p class="text-muted">Start building your lot list for this auction.</p>
+                            <a href="{{ url_for('items.create') }}?auction_id={{ auction.id }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Your First Item
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Profit Details Modal -->
+<div class="modal fade" id="profitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Profit Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="profitDetails">
+                <!-- Profit details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function showProfitDetails(itemId) {
+    // This would typically load profit details via HTMX or AJAX
+    // For now, we'll show a placeholder
+    document.getElementById('profitDetails').innerHTML = '<p>Loading profit details...</p>';
+    new bootstrap.Modal(document.getElementById('profitModal')).show();
+}
+</script>
+{% endblock %}

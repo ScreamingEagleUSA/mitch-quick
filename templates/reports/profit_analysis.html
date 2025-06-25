@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}Profit Analysis - Mitch Quick{% endblock %}
+
+{% block extra_head %}
+<style>
+.chart-container { position: relative; height: 300px; }
+.profit-positive { color: var(--bs-success) !important; }
+.profit-negative { color: var(--bs-danger) !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-calculator me-2"></i>Profit Analysis
+            </h1>
+            <p class="text-muted">Comprehensive profit analysis and ROI insights</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('reports.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Reports
+                </a>
+                <a href="{{ url_for('reports.export_profit_analysis') }}" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-boxes fa-2x text-primary mb-2"></i>
+                    <h4 class="text-primary">{{ analysis_data.total_items }}</h4>
+                    <small class="text-muted">Items Sold</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                    <h4 class="text-success">${{ "%.0f"|format(analysis_data.total_revenue) }}</h4>
+                    <small class="text-muted">Total Revenue</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-credit-card fa-2x text-warning mb-2"></i>
+                    <h4 class="text-warning">${{ "%.0f"|format(analysis_data.total_investment) }}</h4>
+                    <small class="text-muted">Total Investment</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-chart-line fa-2x {% if analysis_data.total_net_profit >= 0 %}text-success{% else %}text-danger{% endif %} mb-2"></i>
+                    <h4 class="{% if analysis_data.total_net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        ${{ "%.0f"|format(analysis_data.total_net_profit) }}
+                    </h4>
+                    <small class="text-muted">Net Profit</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-percentage fa-2x {% if analysis_data.avg_roi >= 0 %}text-success{% else %}text-danger{% endif %} mb-2"></i>
+                    <h4 class="{% if analysis_data.avg_roi >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ "%.1f"|format(analysis_data.avg_roi) }}%
+                    </h4>
+                    <small class="text-muted">Average ROI</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-chart-pie fa-2x text-info mb-2"></i>
+                    <h4 class="text-info">
+                        {% if analysis_data.total_revenue > 0 %}
+                        {{ "%.1f"|format((analysis_data.total_net_profit / analysis_data.total_revenue) * 100) }}%
+                        {% else %}
+                        0.0%
+                        {% endif %}
+                    </h4>
+                    <small class="text-muted">Profit Margin</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Monthly Trends Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-area me-2"></i>Monthly Profit Trends
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="monthlyTrendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROI Distribution -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>ROI Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="roiDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tags me-2"></i>Category Performance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if analysis_data.category_breakdown %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Category/Auction</th>
+                                        <th>Items Sold</th>
+                                        <th>Total Revenue</th>
+                                        <th>Total Profit</th>
+                                        <th>Avg Profit/Item</th>
+                                        <th>Success Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for category, data in analysis_data.category_breakdown.items() %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ category }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ data.count }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-success">${{ "%.2f"|format(data.revenue) }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="{% if data.profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                ${{ "%.2f"|format(data.profit) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if data.count > 0 %}
+                                            <span class="{% if (data.profit / data.count) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                ${{ "%.2f"|format(data.profit / data.count) }}
+                                            </span>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if data.revenue > 0 %}
+                                            {% set margin = (data.profit / data.revenue) * 100 %}
+                                            <span class="badge {% if margin >= 20 %}bg-success{% elif margin >= 10 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ "%.1f"|format(margin) }}%
+                                            </span>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Category Data</h5>
+                            <p class="text-muted">No sold items found for category analysis.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Performers -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-trophy me-2"></i>Top Performing Items
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if analysis_data.top_performers %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Item</th>
+                                <th>Auction</th>
+                                <th>Purchase Price</th>
+                                <th>Sale Price</th>
+                                <th>Net Profit</th>
+                                <th>ROI</th>
+                                <th>Sale Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in analysis_data.top_performers %}
+                            <tr>
+                                <td>
+                                    {% if loop.index <= 3 %}
+                                    <span class="badge {% if loop.index == 1 %}bg-warning{% elif loop.index == 2 %}bg-secondary{% else %}bg-info{% endif %}">
+                                        #{{ loop.index }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">#{{ loop.index }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <h6 class="mb-1">{{ item.title }}</h6>
+                                    {% if item.lot_number %}
+                                    <small class="text-muted">Lot #{{ item.lot_number }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.auction %}
+                                    <strong>{{ item.auction.title }}</strong><br>
+                                    <small class="text-muted">{{ item.auction.date.strftime('%m/%d/%Y') }}</small>
+                                    {% else %}
+                                    <span class="text-muted">No auction</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-muted">${{ "%.2f"|format(item.purchase_price) if item.purchase_price else 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-success">${{ "%.2f"|format(item.sale_price) if item.sale_price else 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <strong class="{% if item.net_profit and item.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        ${{ "%.2f"|format(item.net_profit) if item.net_profit else '0.00' }}
+                                    </strong>
+                                </td>
+                                <td>
+                                    {% if item.roi_percentage is not none %}
+                                    <span class="badge {% if item.roi_percentage >= 50 %}bg-success{% elif item.roi_percentage >= 20 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ "%.1f"|format(item.roi_percentage) }}%
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.sale_date %}
+                                    {{ item.sale_date.strftime('%m/%d/%Y') }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-trophy fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Sales Data</h4>
+                    <p class="text-muted">No sold items found for performance analysis.</p>
+                    <a href="{{ url_for('items.index') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add Some Items
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initMonthlyTrendsChart();
+    initROIDistributionChart();
+});
+
+function initMonthlyTrendsChart() {
+    const monthlyData = {{ analysis_data.monthly_trends | tojsonfilter }};
+    
+    const ctx = document.getElementById('monthlyTrendsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: monthlyData.map(d => d.month),
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: monthlyData.map(d => d.revenue),
+                    borderColor: 'rgb(25, 135, 84)',
+                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Profit',
+                    data: monthlyData.map(d => d.profit),
+                    borderColor: 'rgb(13, 110, 253)',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(0);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function initROIDistributionChart() {
+    // Calculate ROI distribution
+    const topPerformers = {{ analysis_data.top_performers | tojsonfilter }};
+    
+    const roiRanges = {
+        'Negative': 0,
+        '0-20%': 0,
+        '21-50%': 0,
+        '51-100%': 0,
+        '100%+': 0
+    };
+
+    topPerformers.forEach(item => {
+        if (item.roi_percentage !== null) {
+            const roi = item.roi_percentage;
+            if (roi < 0) roiRanges['Negative']++;
+            else if (roi <= 20) roiRanges['0-20%']++;
+            else if (roi <= 50) roiRanges['21-50%']++;
+            else if (roi <= 100) roiRanges['51-100%']++;
+            else roiRanges['100%+']++;
+        }
+    });
+
+    const ctx = document.getElementById('roiDistributionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(roiRanges),
+            datasets: [{
+                data: Object.values(roiRanges),
+                backgroundColor: [
+                    'rgb(220, 53, 69)',   // Negative - Red
+                    'rgb(255, 193, 7)',   // 0-20% - Yellow
+                    'rgb(13, 202, 240)',  // 21-50% - Cyan
+                    'rgb(25, 135, 84)',   // 51-100% - Green
+                    'rgb(111, 66, 193)'   // 100%+ - Purple
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

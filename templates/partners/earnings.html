@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Partner Earnings - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-chart-bar me-2"></i>Partner Earnings Summary
+            </h1>
+            <p class="text-muted">Overview of all partner earnings and distributions</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('partners.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Partners
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <h4 class="text-primary">{{ summary_data|length }}</h4>
+                    <small class="text-muted">Active Partners</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                    <h4 class="text-success">
+                        ${{ "%.2f"|format(summary_data|sum(attribute='total_earnings')) }}
+                    </h4>
+                    <small class="text-muted">Total Distributed</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-handshake fa-2x text-info mb-2"></i>
+                    <h4 class="text-info">
+                        {{ summary_data|sum(attribute='total_items') }}
+                    </h4>
+                    <small class="text-muted">Partnership Items</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-check-circle fa-2x text-warning mb-2"></i>
+                    <h4 class="text-warning">
+                        {{ summary_data|sum(attribute='sold_items') }}
+                    </h4>
+                    <small class="text-muted">Completed Sales</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Partner Earnings Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-table me-2"></i>Partner Earnings Breakdown
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if summary_data %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Partner</th>
+                                <th>Contact</th>
+                                <th>Total Items</th>
+                                <th>Items Sold</th>
+                                <th>Total Earnings</th>
+                                <th>Success Rate</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in summary_data %}
+                            <tr>
+                                <td>
+                                    <h6 class="mb-1">{{ data.partner.name }}</h6>
+                                    <small class="text-muted">
+                                        Partner since {{ data.partner.created_at.strftime('%m/%d/%Y') }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if data.partner.email %}
+                                        <a href="mailto:{{ data.partner.email }}" class="text-decoration-none">
+                                            <i class="fas fa-envelope me-1"></i>{{ data.partner.email }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">No email</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ data.total_items }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ data.sold_items }}</span>
+                                </td>
+                                <td>
+                                    <strong class="text-success">
+                                        ${{ "%.2f"|format(data.total_earnings) }}
+                                    </strong>
+                                </td>
+                                <td>
+                                    {% if data.total_items > 0 %}
+                                        {% set success_rate = (data.sold_items / data.total_items * 100) %}
+                                        <span class="badge {% if success_rate >= 70 %}bg-success{% elif success_rate >= 40 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ "%.0f"|format(success_rate) }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('partners.view', partner_id=data.partner.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('partners.export_earnings', partner_id=data.partner.id) }}" 
+                                           class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Export All -->
+                <div class="mt-3 text-center">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-success" onclick="exportAllEarnings()">
+                            <i class="fas fa-download me-2"></i>Export All Earnings
+                        </button>
+                        <button class="btn btn-primary" onclick="sendEarningsReport()">
+                            <i class="fas fa-envelope me-2"></i>Email Summary
+                        </button>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-bar fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Earnings Data</h4>
+                    <p class="text-muted">No partners have earned anything yet.</p>
+                    <a href="{{ url_for('partners.create') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Add Partner
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Top Performers -->
+    {% if summary_data %}
+    <div class="row mt-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-trophy me-2"></i>Top Earners
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for data in summary_data[:5] %}
+                    <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                        <div>
+                            <h6 class="mb-1">{{ data.partner.name }}</h6>
+                            <small class="text-muted">{{ data.sold_items }} items sold</small>
+                        </div>
+                        <div class="text-end">
+                            <strong class="text-success">${{ "%.2f"|format(data.total_earnings) }}</strong>
+                            {% if loop.index == 1 %}
+                            <br><small class="text-warning"><i class="fas fa-crown"></i> Top Earner</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-percent me-2"></i>Best Success Rates
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% set sorted_by_success = summary_data|sort(attribute='sold_items', reverse=true) %}
+                    {% for data in sorted_by_success[:5] %}
+                    {% if data.total_items > 0 %}
+                    {% set success_rate = (data.sold_items / data.total_items * 100) %}
+                    <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                        <div>
+                            <h6 class="mb-1">{{ data.partner.name }}</h6>
+                            <small class="text-muted">{{ data.sold_items }}/{{ data.total_items }} items</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge {% if success_rate >= 70 %}bg-success{% elif success_rate >= 40 %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ "%.0f"|format(success_rate) }}%
+                            </span>
+                            {% if loop.index == 1 and success_rate == 100 %}
+                            <br><small class="text-success"><i class="fas fa-star"></i> Perfect!</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function exportAllEarnings() {
+    // Create a form to export all earnings data
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/reports/export/partner-earnings';
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+function sendEarningsReport() {
+    const emails = prompt('Enter email addresses (comma-separated):');
+    if (emails) {
+        // Send earnings report via email
+        fetch('/reports/send-partner-report', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'emails=' + encodeURIComponent(emails)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Earnings report sent successfully!');
+            } else {
+                alert('Error sending report: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error sending report: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

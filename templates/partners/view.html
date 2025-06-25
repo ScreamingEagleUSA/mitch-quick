@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}{{ partner.name }} - Partner Details - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-user me-2"></i>{{ partner.name }}
+            </h1>
+            <p class="text-muted">Partner details and earnings history</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('partners.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back
+                </a>
+                <a href="{{ url_for('partners.edit', partner_id=partner.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit me-2"></i>Edit
+                </a>
+                <a href="{{ url_for('partners.export_earnings', partner_id=partner.id) }}" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Partner Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-id-card me-2"></i>Partner Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Name:</strong><br>
+                        {{ partner.name }}
+                    </div>
+
+                    {% if partner.email %}
+                    <div class="mb-3">
+                        <strong>Email:</strong><br>
+                        <a href="mailto:{{ partner.email }}" class="text-decoration-none">
+                            <i class="fas fa-envelope me-1"></i>{{ partner.email }}
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <strong>Partner Since:</strong><br>
+                        {{ partner.created_at.strftime('%B %d, %Y') }}
+                    </div>
+
+                    <div class="text-muted small">
+                        <i class="fas fa-clock me-1"></i>Last updated: {{ partner.created_at.strftime('%m/%d/%Y') }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earnings Summary -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-dollar-sign me-2"></i>Earnings Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-12">
+                            <h3 class="text-success">
+                                ${{ "%.2f"|format(total_earnings) }}
+                            </h3>
+                            <small class="text-muted">Total Earnings</small>
+                        </div>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h5 class="text-warning">
+                                ${{ "%.2f"|format(pending_earnings) }}
+                            </h5>
+                            <small class="text-muted">Pending</small>
+                        </div>
+                        <div class="col-6">
+                            <h5 class="text-info">
+                                {{ earnings_data|length }}
+                            </h5>
+                            <small class="text-muted">Partnerships</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Earnings History -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Partnership History
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if earnings_data %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Auction</th>
+                                        <th>Status</th>
+                                        <th>Share %</th>
+                                        <th>Earnings</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for data in earnings_data %}
+                                    <tr>
+                                        <td>
+                                            <h6 class="mb-1">{{ data.item.title }}</h6>
+                                            {% if data.item.lot_number %}
+                                            <small class="text-muted">Lot #{{ data.item.lot_number }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if data.item.auction %}
+                                                <strong>{{ data.item.auction.title }}</strong><br>
+                                                <small class="text-muted">{{ data.item.auction.date.strftime('%m/%d/%Y') }}</small>
+                                            {% else %}
+                                                <span class="text-muted">No auction</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% set status_colors = {
+                                                'watch': 'secondary',
+                                                'won': 'info',
+                                                'listed': 'warning',
+                                                'sold': 'success'
+                                            } %}
+                                            <span class="badge bg-{{ status_colors[data.status] }}">
+                                                {{ data.status.title() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">
+                                                {{ "%.1f"|format(data.partnership.pct_share) }}%
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if data.share_amount is not none %}
+                                                <strong class="text-success">
+                                                    ${{ "%.2f"|format(data.share_amount) }}
+                                                </strong>
+                                            {% elif data.estimated_share is defined %}
+                                                <span class="text-muted">
+                                                    ~${{ "%.2f"|format(data.estimated_share) }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">Pending</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if data.item.sale_date and data.status == 'sold' %}
+                                                {{ data.item.sale_date.strftime('%m/%d/%Y') }}
+                                            {% elif data.item.updated_at %}
+                                                <small class="text-muted">
+                                                    {{ data.item.updated_at.strftime('%m/%d/%Y') }}
+                                                </small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-handshake fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Partnerships Yet</h5>
+                            <p class="text-muted">This partner hasn't been added to any items yet.</p>
+                            <a href="{{ url_for('items.create') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Item with Partnership
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    {% if earnings_data %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% set recent_items = earnings_data[:5] %}
+                    {% for data in recent_items %}
+                    <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                        <div>
+                            <h6 class="mb-1">{{ data.item.title }}</h6>
+                            <small class="text-muted">
+                                {{ data.partnership.pct_share }}% share
+                                {% if data.share_amount is not none %}
+                                - Earned ${{ "%.2f"|format(data.share_amount) }}
+                                {% elif data.estimated_share is defined %}
+                                - Est. ${{ "%.2f"|format(data.estimated_share) }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        <span class="badge bg-{{ status_colors[data.status] }}">
+                            {{ data.status.title() }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Auto-refresh earnings data every 30 seconds
+setInterval(function() {
+    // Could implement HTMX auto-refresh for real-time updates
+    console.log('Auto-refresh earnings data');
+}, 30000);
+</script>
+{% endblock %}

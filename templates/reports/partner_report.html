@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Partner Report - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-users me-2"></i>Partner Earnings Report
+            </h1>
+            <p class="text-muted">Detailed partner performance and earnings breakdown</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('reports.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Reports
+                </a>
+                <button class="btn btn-success" onclick="exportPartnerReport()">
+                    <i class="fas fa-download me-2"></i>Export All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Partner Cards -->
+    <div class="row">
+        {% for data in partner_data %}
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>{{ data.partner.name }}
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('partners.view', partner_id=data.partner.id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ url_for('partners.export_earnings', partner_id=data.partner.id) }}" 
+                           class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-download"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Partner Summary -->
+                    <div class="row text-center mb-3">
+                        <div class="col-3">
+                            <h5 class="text-primary">{{ data.total_items }}</h5>
+                            <small class="text-muted">Total Items</small>
+                        </div>
+                        <div class="col-3">
+                            <h5 class="text-success">{{ data.sold_items }}</h5>
+                            <small class="text-muted">Items Sold</small>
+                        </div>
+                        <div class="col-3">
+                            <h5 class="text-warning">${{ "%.0f"|format(data.total_earnings) }}</h5>
+                            <small class="text-muted">Total Earned</small>
+                        </div>
+                        <div class="col-3">
+                            <h5 class="text-info">${{ "%.0f"|format(data.pending_earnings) }}</h5>
+                            <small class="text-muted">Pending</small>
+                        </div>
+                    </div>
+
+                    <!-- Contact Info -->
+                    {% if data.partner.email %}
+                    <div class="mb-3">
+                        <small class="text-muted">Contact:</small><br>
+                        <a href="mailto:{{ data.partner.email }}" class="text-decoration-none">
+                            <i class="fas fa-envelope me-1"></i>{{ data.partner.email }}
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Recent Sales -->
+                    {% if data.recent_sales %}
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Recent Sales</h6>
+                        {% for sale in data.recent_sales %}
+                        <div class="d-flex justify-content-between align-items-center py-1 {% if not loop.last %}border-bottom{% endif %}">
+                            <div>
+                                <small class="fw-bold">{{ sale.item.title[:30] }}{% if sale.item.title|length > 30 %}...{% endif %}</small><br>
+                                <small class="text-muted">{{ sale.percentage }}% share</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-success fw-bold">${{ "%.2f"|format(sale.share) }}</small>
+                                {% if sale.item.sale_date %}
+                                <br><small class="text-muted">{{ sale.item.sale_date.strftime('%m/%d') }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Performance Metrics -->
+                    <div class="mt-3">
+                        {% if data.total_items > 0 %}
+                        {% set success_rate = (data.sold_items / data.total_items * 100) %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small text-muted">Success Rate:</span>
+                            <span class="badge {% if success_rate >= 70 %}bg-success{% elif success_rate >= 40 %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ "%.0f"|format(success_rate) }}%
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        {% if data.sold_items > 0 %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small text-muted">Avg Earnings/Sale:</span>
+                            <span class="text-success fw-bold">
+                                ${{ "%.2f"|format(data.total_earnings / data.sold_items) }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Summary Report -->
+    {% if partner_data %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Partnership Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-4">
+                        <div class="col-md-2">
+                            <h4 class="text-primary">{{ partner_data|length }}</h4>
+                            <small class="text-muted">Active Partners</small>
+                        </div>
+                        <div class="col-md-2">
+                            <h4 class="text-info">{{ partner_data|sum(attribute='total_items') }}</h4>
+                            <small class="text-muted">Partnership Items</small>
+                        </div>
+                        <div class="col-md-2">
+                            <h4 class="text-success">{{ partner_data|sum(attribute='sold_items') }}</h4>
+                            <small class="text-muted">Items Sold</small>
+                        </div>
+                        <div class="col-md-2">
+                            <h4 class="text-warning">${{ "%.0f"|format(partner_data|sum(attribute='total_earnings')) }}</h4>
+                            <small class="text-muted">Total Distributed</small>
+                        </div>
+                        <div class="col-md-2">
+                            <h4 class="text-danger">${{ "%.0f"|format(partner_data|sum(attribute='pending_earnings')) }}</h4>
+                            <small class="text-muted">Pending Distribution</small>
+                        </div>
+                        <div class="col-md-2">
+                            {% set total_items = partner_data|sum(attribute='total_items') %}
+                            {% set sold_items = partner_data|sum(attribute='sold_items') %}
+                            {% if total_items > 0 %}
+                            <h4 class="text-primary">{{ "%.0f"|format((sold_items / total_items) * 100) }}%</h4>
+                            {% else %}
+                            <h4 class="text-muted">-</h4>
+                            {% endif %}
+                            <small class="text-muted">Overall Success</small>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Partner</th>
+                                    <th>Items</th>
+                                    <th>Sold</th>
+                                    <th>Success Rate</th>
+                                    <th>Total Earnings</th>
+                                    <th>Pending</th>
+                                    <th>Avg per Sale</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in partner_data %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ data.partner.name }}</strong>
+                                        {% if data.partner.email %}
+                                        <br><small class="text-muted">{{ data.partner.email }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ data.total_items }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">{{ data.sold_items }}</span>
+                                    </td>
+                                    <td>
+                                        {% if data.total_items > 0 %}
+                                        {% set success_rate = (data.sold_items / data.total_items * 100) %}
+                                        <span class="badge {% if success_rate >= 70 %}bg-success{% elif success_rate >= 40 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ "%.0f"|format(success_rate) }}%
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">${{ "%.2f"|format(data.total_earnings) }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="text-warning">${{ "%.2f"|format(data.pending_earnings) }}</span>
+                                    </td>
+                                    <td>
+                                        {% if data.sold_items > 0 %}
+                                        <span class="text-success">${{ "%.2f"|format(data.total_earnings / data.sold_items) }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('partners.view', partner_id=data.partner.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('partners.export_earnings', partner_id=data.partner.id) }}" 
+                                               class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Partner Data</h4>
+                    <p class="text-muted">No partners have been added or no partnerships exist yet.</p>
+                    <a href="{{ url_for('partners.create') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Add Your First Partner
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function exportPartnerReport() {
+    // Create a form to export all partner data
+    const form = document.createElement('form');
+    form.method = 'GET';
+    form.action = '/reports/export/partner-earnings';
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+</script>
+{% endblock %}

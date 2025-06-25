@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Mitch Quick{% endblock %}
+
+{% block extra_head %}
+<style>
+.metric-card {
+    transition: transform 0.2s;
+}
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header with Actions -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h1>
+            <p class="text-muted">Welcome back! Here's your auction flipping overview.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-primary" 
+                    hx-post="{{ url_for('dashboard.update_watchlist_prices') }}"
+                    hx-swap="none"
+                    hx-indicator="#price-update-spinner">
+                <span id="price-update-spinner" class="spinner-border spinner-border-sm me-2 d-none"></span>
+                <i class="fas fa-sync-alt me-1"></i>Update Prices
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                    <h5 class="card-title">Total Invested</h5>
+                    <h3 class="text-success">${{ "%.2f"|format(portfolio_metrics.total_invested) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x text-primary mb-2"></i>
+                    <h5 class="card-title">Net Profit</h5>
+                    <h3 class="{{ 'text-success' if portfolio_metrics.total_net_profit >= 0 else 'text-danger' }}">
+                        ${{ "%.2f"|format(portfolio_metrics.total_net_profit) }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-percentage fa-2x text-info mb-2"></i>
+                    <h5 class="card-title">Average ROI</h5>
+                    <h3 class="{{ 'text-success' if portfolio_metrics.average_roi >= 0 else 'text-danger' }}">
+                        {{ "%.1f"|format(portfolio_metrics.average_roi) }}%
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-box fa-2x text-warning mb-2"></i>
+                    <h5 class="card-title">Items Sold</h5>
+                    <h3 class="text-warning">{{ portfolio_metrics.items_sold }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-secondary">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-eye me-1"></i>Watchlist
+                    </h5>
+                    <h4>{{ portfolio_metrics.items_watchlist }}</h4>
+                    <a href="{{ url_for('items.watchlist') }}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-warehouse me-1"></i>Inventory
+                    </h5>
+                    <h4>{{ portfolio_metrics.items_in_inventory }}</h4>
+                    <a href="{{ url_for('items.inventory') }}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-tags me-1"></i>Listed
+                    </h5>
+                    <h4>{{ portfolio_metrics.items_listed }}</h4>
+                    <a href="{{ url_for('items.index', status='listed') }}" class="btn btn-sm btn-outline-dark">View All</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-check me-1"></i>Sold
+                    </h5>
+                    <h4>{{ portfolio_metrics.items_sold }}</h4>
+                    <a href="{{ url_for('items.sold') }}" class="btn btn-sm btn-outline-light">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Weekly Performance Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Weekly Performance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('auctions.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add Auction
+                        </a>
+                        <a href="{{ url_for('items.create') }}" class="btn btn-secondary">
+                            <i class="fas fa-box me-2"></i>Add Item
+                        </a>
+                        <a href="{{ url_for('items.import_pdf') }}" class="btn btn-info">
+                            <i class="fas fa-file-upload me-2"></i>Import PDF
+                        </a>
+                        <a href="{{ url_for('partners.create') }}" class="btn btn-warning">
+                            <i class="fas fa-user-plus me-2"></i>Add Partner
+                        </a>
+                        <a href="{{ url_for('reports.cashflow') }}" class="btn btn-success">
+                            <i class="fas fa-chart-line me-2"></i>View Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Upcoming Auctions -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Upcoming Auctions
+                    </h5>
+                    <a href="{{ url_for('auctions.index') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_auctions %}
+                        {% for auction in upcoming_auctions %}
+                        <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                            <div>
+                                <h6 class="mb-1">{{ auction.title }}</h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>{{ auction.date.strftime('%B %d, %Y') }}
+                                    {% if auction.location %}
+                                    <br><i class="fas fa-map-marker-alt me-1"></i>{{ auction.location }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <a href="{{ url_for('auctions.view', auction_id=auction.id) }}" class="btn btn-sm btn-outline-primary">
+                                View
+                            </a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-calendar-times fa-2x mb-2"></i><br>
+                            No upcoming auctions
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Watchlist -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-eye me-2"></i>Recent Watchlist
+                    </h5>
+                    <a href="{{ url_for('items.watchlist') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_watchlist %}
+                        {% for item in recent_watchlist %}
+                        <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                            <div>
+                                <h6 class="mb-1">{{ item.title }}</h6>
+                                <small class="text-muted">
+                                    Max Bid: ${{ "%.2f"|format(item.planned_max_bid) if item.planned_max_bid else 'N/A' }}
+                                    {% if item.target_resale_price %}
+                                    | Target: ${{ "%.2f"|format(item.target_resale_price) }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <a href="{{ url_for('items.edit', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary">
+                                Edit
+                            </a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-eye-slash fa-2x mb-2"></i><br>
+                            No items in watchlist
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Current Inventory -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-warehouse me-2"></i>Current Inventory
+                    </h5>
+                    <a href="{{ url_for('items.inventory') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if current_inventory %}
+                        {% for item in current_inventory %}
+                        <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                            <div>
+                                <h6 class="mb-1">{{ item.title }}</h6>
+                                <small class="text-muted">
+                                    Paid: ${{ "%.2f"|format(item.purchase_price) if item.purchase_price else 'N/A' }}
+                                    {% if item.refurb_cost and item.refurb_cost > 0 %}
+                                    | Refurb: ${{ "%.2f"|format(item.refurb_cost) }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <a href="{{ url_for('items.edit', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary">
+                                Edit
+                            </a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-warehouse fa-2x mb-2"></i><br>
+                            No items in inventory
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Sales -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-dollar-sign me-2"></i>Recent Sales
+                    </h5>
+                    <a href="{{ url_for('items.sold') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_sales %}
+                        {% for item in recent_sales %}
+                        <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                            <div>
+                                <h6 class="mb-1">{{ item.title }}</h6>
+                                <small class="text-muted">
+                                    Sold: ${{ "%.2f"|format(item.sale_price) }}
+                                    | Profit: <span class="{{ 'text-success' if item.net_profit and item.net_profit >= 0 else 'text-danger' }}">
+                                        ${{ "%.2f"|format(item.net_profit) if item.net_profit else '0.00' }}
+                                    </span>
+                                </small>
+                            </div>
+                            <span class="badge bg-success">
+                                {{ item.sale_date.strftime('%m/%d') if item.sale_date else 'Recent' }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-dollar-sign fa-2x mb-2"></i><br>
+                            No recent sales
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Partners -->
+    {% if top_partners %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>Top Partners
+                    </h5>
+                    <a href="{{ url_for('partners.earnings_summary') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for partner_data in top_partners %}
+                        <div class="col-md-2-4 mb-3">
+                            <div class="text-center">
+                                <h6 class="mb-1">{{ partner_data.partner.name }}</h6>
+                                <div class="text-success fw-bold">
+                                    ${{ "%.2f"|format(partner_data.total_earnings) }}
+                                </div>
+                                <small class="text-muted">Total Earnings</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Weekly Performance Chart
+const weeklyData = {{ weekly_data | tojsonfilter }};
+const ctx = document.getElementById('weeklyChart').getContext('2d');
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: weeklyData.map(d => d.week),
+        datasets: [
+            {
+                label: 'Revenue',
+                data: weeklyData.map(d => d.revenue),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.4
+            },
+            {
+                label: 'Profit',
+                data: weeklyData.map(d => d.profit),
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                tension: 0.4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toFixed(0);
+                    }
+                }
+            }
+        }
+    }
+});
+
+// HTMX event handlers
+document.body.addEventListener('htmx:responseError', function(evt) {
+    alert('Error updating prices. Please try again.');
+});
+
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.xhr.status === 200 && evt.detail.pathInfo.requestPath.includes('update-watchlist-prices')) {
+        const response = JSON.parse(evt.detail.xhr.responseText);
+        if (response.success) {
+            alert(`Successfully updated ${response.updated_count} items`);
+        } else {
+            alert('Error: ' + response.error);
+        }
+    }
+});
+</script>
+{% endblock %}

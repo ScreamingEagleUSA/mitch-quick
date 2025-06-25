@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if item else 'Add' }} Item - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-{{ 'edit' if item else 'plus' }} me-2"></i>{{ 'Edit' if item else 'Add' }} Item
+            </h1>
+            <p class="text-muted">{{ 'Update item details' if item else 'Add a new auction item' }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Items
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Basic Information -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Basic Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8 mb-3">
+                                        <label for="auction_id" class="form-label">Auction <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="auction_id" name="auction_id" required>
+                                            <option value="">Select an auction...</option>
+                                            {% for auction in auctions %}
+                                            <option value="{{ auction.id }}" 
+                                                    {% if item and item.auction_id == auction.id %}selected{% endif %}
+                                                    {% if not item and request.args.get('auction_id') == auction.id|string %}selected{% endif %}>
+                                                {{ auction.title }} ({{ auction.date.strftime('%m/%d/%Y') }})
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="lot_number" class="form-label">Lot Number</label>
+                                        <input type="text" class="form-control" id="lot_number" name="lot_number" 
+                                               value="{{ item.lot_number if item else '' }}" placeholder="e.g., 001, A-15">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="title" name="title" 
+                                           value="{{ item.title if item else '' }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3"
+                                              placeholder="Item description, condition notes, etc.">{{ item.description if item else '' }}</textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="watch" {% if not item or item.status.value == 'watch' %}selected{% endif %}>Watchlist</option>
+                                        <option value="won" {% if item and item.status.value == 'won' %}selected{% endif %}>Won/Inventory</option>
+                                        <option value="listed" {% if item and item.status.value == 'listed' %}selected{% endif %}>Listed for Sale</option>
+                                        <option value="sold" {% if item and item.status.value == 'sold' %}selected{% endif %}>Sold</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Planning Information -->
+                        <div class="card mb-4" id="planningCard">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Planning & Targets</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="planned_max_bid" class="form-label">Planned Max Bid</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="planned_max_bid" name="planned_max_bid" 
+                                                   step="0.01" value="{{ item.planned_max_bid if item else '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="target_resale_price" class="form-label">Target Resale Price</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="target_resale_price" name="target_resale_price" 
+                                                   step="0.01" value="{{ item.target_resale_price if item else '' }}">
+                                        </div>
+                                        {% if item and item.ebay_suggested_price %}
+                                        <div class="form-text">
+                                            eBay suggested: ${{ "%.2f"|format(item.ebay_suggested_price) }}
+                                            <small class="text-muted">({{ item.ebay_price_updated.strftime('%m/%d/%Y') if item.ebay_price_updated else 'N/A' }})</small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Purchase Information -->
+                        <div class="card mb-4" id="purchaseCard" style="display: none;">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Purchase Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="purchase_price" class="form-label">Purchase Price</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="purchase_price" name="purchase_price" 
+                                                   step="0.01" value="{{ item.purchase_price if item else '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="refurb_cost" class="form-label">Refurbishment Cost</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="refurb_cost" name="refurb_cost" 
+                                                   step="0.01" value="{{ item.refurb_cost if item else '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Listing Information -->
+                        <div class="card mb-4" id="listingCard" style="display: none;">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Listing Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="list_date" class="form-label">List Date</label>
+                                        <input type="date" class="form-control" id="list_date" name="list_date" 
+                                               value="{{ item.list_date.strftime('%Y-%m-%d') if item and item.list_date else '' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="list_channel" class="form-label">List Channel</label>
+                                        <select class="form-select" id="list_channel" name="list_channel">
+                                            <option value="">Select channel...</option>
+                                            <option value="eBay" {% if item and item.list_channel == 'eBay' %}selected{% endif %}>eBay</option>
+                                            <option value="Facebook Marketplace" {% if item and item.list_channel == 'Facebook Marketplace' %}selected{% endif %}>Facebook Marketplace</option>
+                                            <option value="Craigslist" {% if item and item.list_channel == 'Craigslist' %}selected{% endif %}>Craigslist</option>
+                                            <option value="Etsy" {% if item and item.list_channel == 'Etsy' %}selected{% endif %}>Etsy</option>
+                                            <option value="Amazon" {% if item and item.list_channel == 'Amazon' %}selected{% endif %}>Amazon</option>
+                                            <option value="Local Sale" {% if item and item.list_channel == 'Local Sale' %}selected{% endif %}>Local Sale</option>
+                                            <option value="Other" {% if item and item.list_channel == 'Other' %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sale Information -->
+                        <div class="card mb-4" id="saleCard" style="display: none;">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Sale Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="sale_date" class="form-label">Sale Date</label>
+                                        <input type="date" class="form-control" id="sale_date" name="sale_date" 
+                                               value="{{ item.sale_date.strftime('%Y-%m-%d') if item and item.sale_date else '' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="sale_price" class="form-label">Sale Price</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="sale_price" name="sale_price" 
+                                                   step="0.01" value="{{ item.sale_price if item else '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="sale_fees" class="form-label">Sale Fees</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="sale_fees" name="sale_fees" 
+                                                   step="0.01" value="{{ item.sale_fees if item else '' }}">
+                                        </div>
+                                        <div class="form-text">eBay, PayPal, platform fees</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="shipping_cost" class="form-label">Shipping Cost</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="shipping_cost" name="shipping_cost" 
+                                                   step="0.01" value="{{ item.shipping_cost if item else '' }}">
+                                        </div>
+                                        <div class="form-text">Packaging & shipping costs</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{ 'Update Item' if item else 'Create Item' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            {% if item %}
+            <!-- Profit Summary -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calculator me-2"></i>Profit Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if item.status.value == 'sold' and item.net_profit is not none %}
+                        <div class="row text-center">
+                            <div class="col-12 mb-2">
+                                <h4 class="{{ 'text-success' if item.net_profit >= 0 else 'text-danger' }}">
+                                    ${{ "%.2f"|format(item.net_profit) }}
+                                </h4>
+                                <small class="text-muted">Net Profit</small>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <strong class="{{ 'text-success' if item.roi_percentage and item.roi_percentage >= 0 else 'text-danger' }}">
+                                    {{ "%.1f"|format(item.roi_percentage) if item.roi_percentage else '0.0' }}%
+                                </strong><br>
+                                <small class="text-muted">ROI</small>
+                            </div>
+                            <div class="col-6">
+                                <strong>${{ "%.2f"|format(item.gross_profit) if item.gross_profit else '0.00' }}</strong><br>
+                                <small class="text-muted">Gross Profit</small>
+                            </div>
+                        </div>
+                    {% elif item.status.value in ['won', 'listed'] %}
+                        {% if item.target_resale_price and item.purchase_price %}
+                            {% set estimated_profit = item.target_resale_price - item.purchase_price - (item.refurb_cost or 0) %}
+                            <div class="text-center">
+                                <h5 class="{{ 'text-success' if estimated_profit >= 0 else 'text-danger' }}">
+                                    ${{ "%.2f"|format(estimated_profit) }}
+                                </h5>
+                                <small class="text-muted">Estimated Profit</small>
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center">Add purchase price and target price to see profit estimates</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center">Profit calculations available after purchase</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Partners -->
+            {% if item.partners %}
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>Partners
+                    </h5>
+                    <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-sm btn-outline-primary">
+                        Manage
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% for partnership in item.partners %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ partnership.partner.name }}</span>
+                        <span class="badge bg-secondary">{{ partnership.pct_share }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if item %}
+                        <button class="btn btn-outline-secondary" 
+                                hx-post="{{ url_for('items.update_price_suggestion', item_id=item.id) }}"
+                                hx-swap="none">
+                            <i class="fas fa-sync-alt me-2"></i>Update eBay Price
+                        </button>
+                        <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-outline-info">
+                            <i class="fas fa-users me-2"></i>Manage Partners
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('items.import_pdf') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-file-upload me-2"></i>Import PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Show/hide sections based on status
+function updateFormSections() {
+    const status = document.getElementById('status').value;
+    const planningCard = document.getElementById('planningCard');
+    const purchaseCard = document.getElementById('purchaseCard');
+    const listingCard = document.getElementById('listingCard');
+    const saleCard = document.getElementById('saleCard');
+
+    // Hide all initially
+    purchaseCard.style.display = 'none';
+    listingCard.style.display = 'none';
+    saleCard.style.display = 'none';
+
+    // Show relevant sections
+    if (status === 'won' || status === 'listed' || status === 'sold') {
+        purchaseCard.style.display = 'block';
+    }
+    if (status === 'listed' || status === 'sold') {
+        listingCard.style.display = 'block';
+    }
+    if (status === 'sold') {
+        saleCard.style.display = 'block';
+    }
+}
+
+// Initialize form sections
+document.addEventListener('DOMContentLoaded', function() {
+    updateFormSections();
+    document.getElementById('status').addEventListener('change', updateFormSections);
+});
+
+// HTMX event handlers
+document.body.addEventListener('htmx:responseError', function(evt) {
+    alert('Error updating price. Please try again.');
+});
+
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.xhr.status === 200 && evt.detail.pathInfo.requestPath.includes('update-price')) {
+        const response = JSON.parse(evt.detail.xhr.responseText);
+        if (response.success && response.suggested_price) {
+            // Update the target price field suggestion
+            const targetField = document.getElementById('target_resale_price');
+            if (!targetField.value) {
+                targetField.value = response.suggested_price;
+            }
+            alert(`eBay suggested price: $${response.suggested_price}`);
+        } else {
+            alert('Could not fetch price suggestion');
+        }
+    }
+});
+</script>
+{% endblock %}

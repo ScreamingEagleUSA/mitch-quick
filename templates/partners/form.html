@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if partner else 'Add' }} Partner - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-{{ 'user-edit' if partner else 'user-plus' }} me-2"></i>{{ 'Edit' if partner else 'Add' }} Partner
+            </h1>
+            <p class="text-muted">{{ 'Update partner information' if partner else 'Add a new business partner' }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('partners.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Partners
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-4">
+                            <label for="name" class="form-label">
+                                Partner Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ partner.name if partner else '' }}" required>
+                            <div class="form-text">Full name or business name of the partner</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ partner.email if partner else '' }}">
+                            <div class="form-text">Optional: Used for earnings reports and communication</div>
+                        </div>
+
+                        <!-- Partnership Information -->
+                        {% if partner %}
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>Partnership Summary
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <strong>{{ partner.item_partnerships|length }}</strong><br>
+                                        <small class="text-muted">Active Partnerships</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <strong>{{ partner.item_partnerships|selectattr('item.status.value', 'equalto', 'sold')|list|length }}</strong><br>
+                                        <small class="text-muted">Completed Sales</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <strong class="text-muted">
+                                            {{ partner.created_at.strftime('%m/%d/%Y') }}
+                                        </strong><br>
+                                        <small class="text-muted">Partner Since</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('partners.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{ 'Update Partner' if partner else 'Create Partner' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-question-circle me-2"></i>About Partners
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0 text-muted small">
+                        <li>Partners can have profit sharing agreements on individual items</li>
+                        <li>Set percentage shares when editing items with partnerships</li>
+                        <li>Track earnings and generate payout reports</li>
+                        <li>Email addresses are used for automated earnings reports</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    
+    if (!name) {
+        e.preventDefault();
+        alert('Partner name is required.');
+        document.getElementById('name').focus();
+        return;
+    }
+    
+    if (name.length < 2) {
+        e.preventDefault();
+        alert('Partner name must be at least 2 characters long.');
+        document.getElementById('name').focus();
+        return;
+    }
+});
+
+// Auto-focus name field for new partners
+{% if not partner %}
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('name').focus();
+});
+{% endif %}
+</script>
+{% endblock %}

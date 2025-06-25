@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Partners - {{ item.title }} - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Manage Partners</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('items.view', item_id=item.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Item
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2"></i>Partner Shares for: {{ item.title }}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if item.net_profit <= 0 %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This item has no profit to distribute. Net profit: ${{ "%.2f"|format(item.net_profit) }}
+                    </div>
+                {% endif %}
+                
+                <form method="POST" x-data="partnerManager()">
+                    <div id="partner-shares">
+                        {% if current_partnerships %}
+                            {% for partner in partners %}
+                                {% if partner.id in current_partnerships %}
+                                    <div class="row mb-3 partner-row">
+                                        <div class="col-md-6">
+                                            <select class="form-select" name="partner_id">
+                                                <option value="">Select Partner</option>
+                                                {% for p in partners %}
+                                                    <option value="{{ p.id }}" {% if p.id == partner.id %}selected{% endif %}>
+                                                        {{ p.name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" name="partner_share" 
+                                                       value="{{ current_partnerships[partner.id] }}" 
+                                                       min="0" max="100" step="0.1" placeholder="0.0"
+                                                       x-on:input="updateTotalShare()">
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-outline-danger" onclick="this.closest('.partner-row').remove(); updateTotalShare()">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-primary" onclick="addPartnerRow()">
+                            <i class="fas fa-plus me-1"></i>Add Partner
+                        </button>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <strong>Total Share Percentage:</strong>
+                                <span id="total-share">0.0</span>%
+                                <div id="share-warning" class="small text-warning mt-1" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Total shares cannot exceed 100%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {% if item.net_profit > 0 %}
+                                <div class="alert alert-success">
+                                    <strong>Available to Distribute:</strong>
+                                    ${{ "%.2f"|format(item.net_profit) }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('items.view', item_id=item.id) }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Update Partners</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Item Summary -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Item Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Total Cost:</strong> ${{ "%.2f"|format(item.total_cost) }}
+                </div>
+                <div class="mb-2">
+                    <strong>Sale Price:</strong> ${{ "%.2f"|format(item.sale_price or 0) }}
+                </div>
+                <div class="mb-2">
+                    <strong>Total Fees:</strong> ${{ "%.2f"|format((item.sale_fees or 0) + (item.shipping_cost or 0)) }}
+                </div>
+                <hr>
+                <div class="mb-2">
+                    <strong>Net Profit:</strong>
+                    <span class="{% if item.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        ${{ "%.2f"|format(item.net_profit) }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Partner Preview -->
+        <div class="card" x-data="{ netProfit: {{ item.net_profit }} }">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Share Preview</h6>
+            </div>
+            <div class="card-body">
+                <div id="partner-preview">
+                    <p class="text-muted small">Add partners to see share breakdown</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Available Partners -->
+        {% if partners %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-users me-2"></i>Available Partners</h6>
+            </div>
+            <div class="card-body">
+                {% for partner in partners %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <div class="fw-bold">{{ partner.name }}</div>
+                            {% if partner.email %}
+                                <small class="text-muted">{{ partner.email }}</small>
+                            {% endif %}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                onclick="addSpecificPartner({{ partner.id }}, '{{ partner.name }}')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function partnerManager() {
+    return {
+        updateTotalShare() {
+            setTimeout(() => {
+                let total = 0;
+                document.querySelectorAll('input[name="partner_share"]').forEach(input => {
+                    total += parseFloat(input.value) || 0;
+                });
+                
+                document.getElementById('total-share').textContent = total.toFixed(1);
+                
+                const warning = document.getElementById('share-warning');
+                if (total > 100) {
+                    warning.style.display = 'block';
+                } else {
+                    warning.style.display = 'none';
+                }
+                
+                this.updatePreview();
+            }, 10);
+        },
+        
+        updatePreview() {
+            const preview = document.getElementById('partner-preview');
+            const netProfit = {{ item.net_profit }};
+            let html = '';
+            
+            const partnerRows = document.querySelectorAll('.partner-row');
+            if (partnerRows.length === 0) {
+                preview.innerHTML = '<p class="text-muted small">Add partners to see share breakdown</p>';
+                return;
+            }
+            
+            partnerRows.forEach(row => {
+                const select = row.querySelector('select[name="partner_id"]');
+                const input = row.querySelector('input[name="partner_share"]');
+                
+                if (select.value && input.value) {
+                    const partnerName = select.options[select.selectedIndex].text;
+                    const percentage = parseFloat(input.value) || 0;
+                    const shareAmount = (percentage / 100) * netProfit;
+                    
+                    html += `
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>${partnerName}:</span>
+                            <span class="text-success">$${shareAmount.toFixed(2)}</span>
+                        </div>
+                    `;
+                }
+            });
+            
+            preview.innerHTML = html || '<p class="text-muted small">Configure partner shares above</p>';
+        }
+    }
+}
+
+function addPartnerRow() {
+    const container = document.getElementById('partner-shares');
+    const newRow = document.createElement('div');
+    newRow.className = 'row mb-3 partner-row';
+    newRow.innerHTML = `
+        <div class="col-md-6">
+            <select class="form-select" name="partner_id">
+                <option value="">Select Partner</option>
+                {% for partner in partners %}
+                    <option value="{{ partner.id }}">{{ partner.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="number" class="form-control" name="partner_share" 
+                       min="0" max="100" step="0.1" placeholder="0.0"
+                       x-on:input="updateTotalShare()">
+                <span class="input-group-text">%</span>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger" onclick="this.closest('.partner-row').remove(); updateTotalShare()">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(newRow);
+    
+    // Add event listeners
+    const input = newRow.querySelector('input[name="partner_share"]');
+    const select = newRow.querySelector('select[name="partner_id"]');
+    
+    input.addEventListener('input', () => updateTotalShare());
+    select.addEventListener('change', () => updateTotalShare());
+}
+
+function addSpecificPartner(partnerId, partnerName) {
+    const container = document.getElementById('partner-shares');
+    const newRow = document.createElement('div');
+    newRow.className = 'row mb-3 partner-row';
+    newRow.innerHTML = `
+        <div class="col-md-6">
+            <select class="form-select" name="partner_id">
+                <option value="">Select Partner</option>
+                {% for partner in partners %}
+                    <option value="{{ partner.id }}" ${partnerId == {{ partner.id }} ? 'selected' : ''}>{{ partner.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="number" class="form-control" name="partner_share" 
+                       min="0" max="100" step="0.1" placeholder="0.0"
+                       x-on:input="updateTotalShare()">
+                <span class="input-group-text">%</span>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger" onclick="this.closest('.partner-row').remove(); updateTotalShare()">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(newRow);
+    
+    // Set the selected partner
+    const select = newRow.querySelector('select[name="partner_id"]');
+    select.value = partnerId;
+    
+    // Add event listeners
+    const input = newRow.querySelector('input[name="partner_share"]');
+    input.addEventListener('input', () => updateTotalShare());
+    select.addEventListener('change', () => updateTotalShare());
+}
+
+function updateTotalShare() {
+    let total = 0;
+    document.querySelectorAll('input[name="partner_share"]').forEach(input => {
+        total += parseFloat(input.value) || 0;
+    });
+    
+    document.getElementById('total-share').textContent = total.toFixed(1);
+    
+    const warning = document.getElementById('share-warning');
+    if (total > 100) {
+        warning.style.display = 'block';
+    } else {
+        warning.style.display = 'none';
+    }
+    
+    updatePreview();
+}
+
+function updatePreview() {
+    const preview = document.getElementById('partner-preview');
+    const netProfit = {{ item.net_profit }};
+    let html = '';
+    
+    const partnerRows = document.querySelectorAll('.partner-row');
+    if (partnerRows.length === 0) {
+        preview.innerHTML = '<p class="text-muted small">Add partners to see share breakdown</p>';
+        return;
+    }
+    
+    partnerRows.forEach(row => {
+        const select = row.querySelector('select[name="partner_id"]');
+        const input = row.querySelector('input[name="partner_share"]');
+        
+        if (select.value && input.value) {
+            const partnerName = select.options[select.selectedIndex].text;
+            const percentage = parseFloat(input.value) || 0;
+            const shareAmount = (percentage / 100) * netProfit;
+            
+            html += `
+                <div class="d-flex justify-content-between small mb-1">
+                    <span>${partnerName}:</span>
+                    <span class="text-success">$${shareAmount.toFixed(2)}</span>
+                </div>
+            `;
+        }
+    });
+    
+    preview.innerHTML = html || '<p class="text-muted small">Configure partner shares above</p>';
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    updateTotalShare();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Watchlist - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-eye me-2"></i>Watchlist
+            </h1>
+            <p class="text-muted">Items you're tracking for upcoming auctions</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('items.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add Item
+                </a>
+                <button class="btn btn-secondary" 
+                        hx-post="{{ url_for('dashboard.update_watchlist_prices') }}"
+                        hx-swap="none">
+                    <i class="fas fa-sync-alt me-2"></i>Update Prices
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Watchlist Items -->
+    {% if items %}
+        <div class="row">
+            {% for item in items %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">
+                            {% if item.lot_number %}
+                            <span class="badge bg-secondary me-2">#{{ item.lot_number }}</span>
+                            {% endif %}
+                            {{ item.title }}
+                        </h6>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('items.edit', item_id=item.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-secondary" 
+                                    hx-post="{{ url_for('items.update_price_suggestion', item_id=item.id) }}"
+                                    hx-swap="none"
+                                    title="Update eBay Price">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Auction Info -->
+                        {% if item.auction %}
+                        <div class="mb-3">
+                            <strong>{{ item.auction.title }}</strong><br>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>{{ item.auction.date.strftime('%B %d, %Y') }}
+                                {% if item.auction.location %}
+                                <br><i class="fas fa-map-marker-alt me-1"></i>{{ item.auction.location }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        {% endif %}
+
+                        <!-- Description -->
+                        {% if item.description %}
+                        <p class="text-muted small mb-3">{{ item.description }}</p>
+                        {% endif %}
+
+                        <!-- Bidding Strategy -->
+                        <div class="row text-center mb-3">
+                            <div class="col-6">
+                                <h5 class="text-primary">
+                                    ${{ "%.2f"|format(item.planned_max_bid) if item.planned_max_bid else 'Not Set' }}
+                                </h5>
+                                <small class="text-muted">Max Bid</small>
+                            </div>
+                            <div class="col-6">
+                                <h5 class="text-success">
+                                    ${{ "%.2f"|format(item.target_resale_price) if item.target_resale_price else 'Not Set' }}
+                                </h5>
+                                <small class="text-muted">Target Price</small>
+                            </div>
+                        </div>
+
+                        <!-- eBay Price Suggestion -->
+                        {% if item.ebay_suggested_price %}
+                        <div class="alert alert-info py-2 mb-3">
+                            <small>
+                                <i class="fas fa-lightbulb me-1"></i>
+                                eBay suggests: <strong>${{ "%.2f"|format(item.ebay_suggested_price) }}</strong>
+                                <span class="text-muted">({{ item.ebay_price_updated.strftime('%m/%d') if item.ebay_price_updated else 'N/A' }})</span>
+                            </small>
+                        </div>
+                        {% endif %}
+
+                        <!-- Profit Estimate -->
+                        {% if item.planned_max_bid and item.target_resale_price %}
+                        {% set estimated_profit = item.target_resale_price - item.planned_max_bid %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="small text-muted">Estimated Profit:</span>
+                                <span class="small {% if estimated_profit >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    ${{ "%.2f"|format(estimated_profit) }}
+                                </span>
+                            </div>
+                            {% if item.planned_max_bid > 0 %}
+                            {% set estimated_roi = (estimated_profit / item.planned_max_bid) * 100 %}
+                            <div class="d-flex justify-content-between">
+                                <span class="small text-muted">Estimated ROI:</span>
+                                <span class="small {% if estimated_roi >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    {{ "%.1f"|format(estimated_roi) }}%
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Auction Link -->
+                        {% if item.auction and item.auction.url %}
+                        <div class="d-grid">
+                            <a href="{{ item.auction.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-external-link-alt me-1"></i>View Auction
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>Added {{ item.created_at.strftime('%m/%d/%Y') }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-bolt me-2"></i>Quick Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-primary" onclick="updateAllPrices()">
+                                        <i class="fas fa-sync-alt me-1"></i>Update All Prices
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-secondary" onclick="exportWatchlist()">
+                                        <i class="fas fa-download me-1"></i>Export Watchlist
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <div class="d-grid">
+                                    <a href="{{ url_for('items.import_pdf') }}" class="btn btn-outline-info">
+                                        <i class="fas fa-file-upload me-1"></i>Import PDF
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-success" onclick="planBiddingStrategy()">
+                                        <i class="fas fa-calculator me-1"></i>Plan Strategy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-eye-slash fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">Your Watchlist is Empty</h4>
+                <p class="text-muted">Start adding items you're interested in bidding on.</p>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('items.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add Your First Item
+                    </a>
+                    <a href="{{ url_for('items.import_pdf') }}" class="btn btn-secondary">
+                        <i class="fas fa-file-upload me-2"></i>Import from PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateAllPrices() {
+    if (confirm('Update eBay price suggestions for all watchlist items? This may take a few moments.')) {
+        fetch('/dashboard/update-watchlist-prices', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Updated prices for ${data.updated_count} items`);
+                location.reload();
+            } else {
+                alert('Error updating prices: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error updating prices: ' + error);
+        });
+    }
+}
+
+function exportWatchlist() {
+    // Create CSV export of watchlist
+    const items = {{ items | tojsonfilter }};
+    
+    if (items.length === 0) {
+        alert('No items to export');
+        return;
+    }
+
+    let csv = 'Auction,Lot Number,Title,Description,Max Bid,Target Price,eBay Suggested,Created\n';
+    
+    items.forEach(item => {
+        const auction = item.auction ? item.auction.title : '';
+        const lotNumber = item.lot_number || '';
+        const title = item.title.replace(/"/g, '""');
+        const description = (item.description || '').replace(/"/g, '""');
+        const maxBid = item.planned_max_bid || '';
+        const targetPrice = item.target_resale_price || '';
+        const ebayPrice = item.ebay_suggested_price || '';
+        const created = new Date(item.created_at).toLocaleDateString();
+        
+        csv += `"${auction}","${lotNumber}","${title}","${description}","${maxBid}","${targetPrice}","${ebayPrice}","${created}"\n`;
+    });
+
+    // Download CSV
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'watchlist_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function planBiddingStrategy() {
+    const totalMaxBids = {{ items | sum(attribute='planned_max_bid') | default(0) }};
+    const totalTargetValue = {{ items | sum(attribute='target_resale_price') | default(0) }};
+    const itemCount = {{ items | length }};
+    
+    if (itemCount === 0) {
+        alert('No items in watchlist to analyze');
+        return;
+    }
+
+    const avgMaxBid = totalMaxBids / itemCount;
+    const estimatedProfit = totalTargetValue - totalMaxBids;
+    
+    let message = `Bidding Strategy Analysis:\n\n`;
+    message += `Total Items: ${itemCount}\n`;
+    message += `Total Max Bids: $${totalMaxBids.toFixed(2)}\n`;
+    message += `Total Target Value: $${totalTargetValue.toFixed(2)}\n`;
+    message += `Estimated Profit: $${estimatedProfit.toFixed(2)}\n`;
+    message += `Average Max Bid: $${avgMaxBid.toFixed(2)}\n\n`;
+    
+    if (estimatedProfit > 0) {
+        message += `✅ Strategy looks profitable!\n`;
+        message += `Potential ROI: ${((estimatedProfit / totalMaxBids) * 100).toFixed(1)}%`;
+    } else {
+        message += `⚠️ Review your bids - estimated loss of $${Math.abs(estimatedProfit).toFixed(2)}`;
+    }
+
+    alert(message);
+}
+
+// HTMX event handlers
+document.body.addEventListener('htmx:responseError', function(evt) {
+    if (evt.detail.pathInfo.requestPath.includes('update-price')) {
+        alert('Error updating price. Please try again.');
+    }
+});
+
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.xhr.status === 200) {
+        const path = evt.detail.pathInfo.requestPath;
+        if (path.includes('update-price')) {
+            const response = JSON.parse(evt.detail.xhr.responseText);
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + response.error);
+            }
+        } else if (path.includes('update-watchlist-prices')) {
+            const response = JSON.parse(evt.detail.xhr.responseText);
+            if (response.success) {
+                alert(`Updated ${response.updated_count} items`);
+                location.reload();
+            } else {
+                alert('Error: ' + response.error);
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

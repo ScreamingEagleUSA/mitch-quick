@@ -1,0 +1,136 @@
+# Mitch Quick - Auction Flipping Tracker
+
+## Overview
+
+Mitch Quick is a comprehensive web application for managing auction flipping businesses. Built with Flask 3.0 and Python 3.12, it provides comprehensive tracking for auctions, inventory management, profit calculations, partner relationships, and automated reporting. The application supports the complete auction flipping workflow from watchlisting items to final sale and profit distribution.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: Flask with Jinja2 templating
+- **UI Components**: Bootstrap 5 with dark theme, Font Awesome icons
+- **Interactive Elements**: HTMX for dynamic interactions, Alpine.js for client-side reactivity
+- **Charts**: Chart.js for data visualization
+- **Responsive Design**: Mobile-friendly interface using Bootstrap grid system
+
+### Backend Architecture
+- **Framework**: Flask 3.0 with Blueprint organization
+- **Database**: SQLAlchemy ORM with SQLite (configurable to PostgreSQL)
+- **Authentication**: Flask-Login with session-based auth
+- **Migration**: Flask-Migrate for database schema management
+- **Deployment**: Gunicorn WSGI server with autoscale deployment
+
+### Blueprint Structure
+- **auth**: User authentication (login/register)
+- **dashboard**: Main dashboard with KPIs and overview
+- **auctions**: Auction CRUD operations
+- **items**: Item management (watchlist, inventory, sales)
+- **partners**: Partner management and profit sharing
+- **reports**: Financial reports and analytics
+
+## Key Components
+
+### Core Data Models
+1. **User**: Authentication and user management
+2. **Auction**: Auction events with date, location, notes
+3. **Item**: Central entity tracking items through entire lifecycle (watch → won → listed → sold)
+4. **Partner**: Business partners for profit sharing
+5. **ItemPartner**: Many-to-many relationship with percentage shares
+
+### Item Lifecycle Management
+- **Watch Status**: Items on watchlist with planned max bid and target resale price
+- **Won Status**: Items purchased with actual purchase price and refurbishment costs
+- **Listed Status**: Items listed for sale with channel and listing details
+- **Sold Status**: Items sold with final sale price, fees, and shipping costs
+
+### Profit Calculation Engine
+- **Gross Profit**: Sale price minus total costs (purchase + refurb)
+- **Net Profit**: Gross profit minus fees and shipping
+- **ROI Percentage**: Return on investment calculations
+- **Break-even Analysis**: Required sale price to break even
+- **Partner Share Distribution**: Automatic calculation based on percentage shares
+
+### Advanced Features
+1. **OCR PDF Import**: Extract lot information from auction catalogs using pdfplumber and pytesseract
+2. **eBay API Integration**: Automated price suggestions with 24-hour caching
+3. **Email Reports**: Scheduled cash flow reports with CSV attachments and charts
+4. **Responsive Dashboard**: Real-time KPI tracking and trend analysis
+
+## Data Flow
+
+### Item Creation Flow
+1. User creates auction event
+2. Items added manually or via PDF import (OCR)
+3. Items start in "watch" status with planned bids
+4. Status progresses: watch → won → listed → sold
+5. Profit calculations update automatically at each stage
+
+### Partner Management Flow
+1. Partners created with contact information
+2. Partners assigned to items with percentage shares
+3. Profit distribution calculated automatically when items sell
+4. Earnings tracked and exportable for payout management
+
+### Reporting Flow
+1. Real-time dashboard updates with latest metrics
+2. Cash flow reports generated on-demand or scheduled
+3. Partner earnings reports with detailed breakdowns
+4. Export capabilities for external accounting systems
+
+## External Dependencies
+
+### Core Dependencies
+- **Flask 3.1.1**: Web framework
+- **SQLAlchemy 2.0.41**: Database ORM
+- **Flask-Login 0.6.3**: Authentication
+- **Flask-Migrate 4.1.0**: Database migrations
+- **Gunicorn 23.0.0**: Production WSGI server
+
+### OCR and File Processing
+- **pdfplumber 0.11.7**: PDF text extraction
+- **pytesseract 0.3.13**: OCR for scanned documents
+- **Pillow 11.2.1**: Image processing
+
+### External APIs
+- **requests 2.32.4**: HTTP client for eBay API integration
+- **eBay Browse API**: Price suggestion service (configured via environment variables)
+
+### Visualization and Reports
+- **matplotlib 3.10.3**: Chart generation for reports
+- **Chart.js**: Frontend data visualization
+
+### Database Support
+- **psycopg2-binary 2.9.10**: PostgreSQL adapter (for production scaling)
+- **SQLite**: Default development database
+
+## Deployment Strategy
+
+### Development Environment
+- Uses SQLite database for simplicity
+- Flask development server with debug mode
+- Hot reloading enabled for rapid development
+
+### Production Configuration
+- Gunicorn WSGI server with autoscale deployment
+- ProxyFix middleware for proper header handling
+- Environment-based configuration management
+- Session secret and database URL via environment variables
+
+### Environment Variables
+- `SESSION_SECRET`: Flask session encryption key
+- `DATABASE_URL`: Database connection string
+- `EBAY_APP_ID`, `EBAY_CERT_ID`, `EBAY_DEV_ID`: eBay API credentials
+- `SMTP_*`: Email configuration for reports
+
+### File Upload Configuration
+- Maximum file size: 16MB
+- Secure filename handling
+- Upload folder configuration for PDF processing
+
+## Changelog
+
+- June 25, 2025. Initial setup
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.

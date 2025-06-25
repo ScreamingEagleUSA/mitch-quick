@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if auction else 'Add' }} Auction - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-{{ 'edit' if auction else 'plus' }} me-2"></i>{{ 'Edit' if auction else 'Add' }} Auction
+            </h1>
+            <p class="text-muted">{{ 'Update auction details' if auction else 'Create a new auction event' }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('auctions.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Auctions
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" name="title" 
+                                       value="{{ auction.title if auction else '' }}" required>
+                                <div class="form-text">Enter a descriptive title for the auction</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="date" name="date" 
+                                       value="{{ auction.date.strftime('%Y-%m-%d') if auction else '' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="location" name="location" 
+                                   value="{{ auction.location if auction else '' }}"
+                                   placeholder="e.g., 123 Main St, Springfield, IL">
+                            <div class="form-text">Physical address or description of the auction location</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="url" class="form-label">URL/Link</label>
+                            <input type="url" class="form-control" id="url" name="url" 
+                                   value="{{ auction.url if auction else '' }}"
+                                   placeholder="https://example.com/auction-details">
+                            <div class="form-text">Link to auction listing, catalog, or website</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4"
+                                      placeholder="Add any additional notes about this auction...">{{ auction.notes if auction else '' }}</textarea>
+                            <div class="form-text">Optional notes about the auction, items of interest, etc.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('auctions.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{ 'Update Auction' if auction else 'Create Auction' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Set minimum date to today for new auctions
+{% if not auction %}
+document.getElementById('date').min = new Date().toISOString().split('T')[0];
+{% endif %}
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const title = document.getElementById('title').value;
+    const date = document.getElementById('date').value;
+    
+    if (!title.trim()) {
+        e.preventDefault();
+        alert('Please enter a title for the auction.');
+        document.getElementById('title').focus();
+        return;
+    }
+    
+    if (!date) {
+        e.preventDefault();
+        alert('Please select a date for the auction.');
+        document.getElementById('date').focus();
+        return;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Partners - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-users me-2"></i>Partners
+            </h1>
+            <p class="text-muted">Manage your business partners and profit sharing</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('partners.create') }}" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i>Add Partner
+                </a>
+                <a href="{{ url_for('partners.earnings_summary') }}" class="btn btn-secondary">
+                    <i class="fas fa-chart-bar me-2"></i>Earnings Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Partners List -->
+    <div class="row">
+        {% if partners %}
+            {% for partner in partners %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user me-2"></i>{{ partner.name }}
+                        </h5>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('partners.view', partner_id=partner.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('partners.edit', partner_id=partner.id) }}" 
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="confirmDelete('{{ partner.id }}', '{{ partner.name }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if partner.email %}
+                        <p class="text-muted mb-3">
+                            <i class="fas fa-envelope me-2"></i>{{ partner.email }}
+                        </p>
+                        {% endif %}
+
+                        <!-- Partner Statistics -->
+                        {% set stats = partner_stats[partner.id] %}
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <h4 class="text-primary">{{ stats.total_items }}</h4>
+                                <small class="text-muted">Total Items</small>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <h4 class="text-success">{{ stats.sold_items }}</h4>
+                                <small class="text-muted">Items Sold</small>
+                            </div>
+                        </div>
+
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h5 class="text-success">
+                                    ${{ "%.2f"|format(stats.total_earnings) }}
+                                </h5>
+                                <small class="text-muted">Total Earnings</small>
+                            </div>
+                            <div class="col-6">
+                                <h5 class="text-warning">
+                                    ${{ "%.2f"|format(stats.pending_earnings) }}
+                                </h5>
+                                <small class="text-muted">Pending Earnings</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('partners.view', partner_id=partner.id) }}" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-chart-line me-1"></i>View Details
+                            </a>
+                            <a href="{{ url_for('partners.export_earnings', partner_id=partner.id) }}" 
+                               class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-download me-1"></i>Export CSV
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Partners Yet</h4>
+                        <p class="text-muted">Add business partners to track profit sharing and earnings.</p>
+                        <a href="{{ url_for('partners.create') }}" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>Add Your First Partner
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Stats Summary -->
+    {% if partners %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Partnership Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h4 class="text-primary">{{ partners|length }}</h4>
+                            <small class="text-muted">Active Partners</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-success">
+                                ${{ "%.2f"|format(partner_stats.values()|sum(attribute='total_earnings')) }}
+                            </h4>
+                            <small class="text-muted">Total Distributed</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-warning">
+                                ${{ "%.2f"|format(partner_stats.values()|sum(attribute='pending_earnings')) }}
+                            </h4>
+                            <small class="text-muted">Pending Distribution</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-info">
+                                {{ partner_stats.values()|sum(attribute='total_items') }}
+                            </h4>
+                            <small class="text-muted">Partnership Items</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete partner "<span id="deletePartnerName"></span>"?</p>
+                <div class="alert alert-warning">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        This will only work if the partner has no existing partnerships. 
+                        Remove all partnerships first.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete Partner</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function confirmDelete(partnerId, partnerName) {
+    document.getElementById('deletePartnerName').textContent = partnerName;
+    document.getElementById('deleteForm').action = `/partners/${partnerId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

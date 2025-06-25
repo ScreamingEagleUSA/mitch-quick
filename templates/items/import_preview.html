@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Preview Import - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-eye me-2"></i>Preview Import
+            </h1>
+            <p class="text-muted">Review extracted items before importing to <strong>{{ auction.title }}</strong></p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('items.import_pdf') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Upload
+            </a>
+        </div>
+    </div>
+
+    <!-- Import Summary -->
+    <div class="alert alert-success mb-4">
+        <h5 class="alert-heading">
+            <i class="fas fa-check-circle me-2"></i>PDF Processed Successfully
+        </h5>
+        <p class="mb-2">Found <strong>{{ lots|length }}</strong> items in the uploaded PDF.</p>
+        <p class="mb-0">Review the items below and select which ones to import.</p>
+    </div>
+
+    <!-- Import Form -->
+    <form method="POST">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Extracted Items
+                </h5>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAll()">
+                        <i class="fas fa-check-square me-1"></i>Select All
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectNone()">
+                        <i class="fas fa-square me-1"></i>Select None
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if lots %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th width="40">
+                                        <input type="checkbox" id="selectAllCheckbox" onchange="toggleAll(this)">
+                                    </th>
+                                    <th>Lot #</th>
+                                    <th>Title</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lot in lots %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="selected_lots" value="{{ loop.index0 }}" 
+                                               class="lot-checkbox" checked>
+                                    </td>
+                                    <td>
+                                        {% if lot.lot_number %}
+                                            <span class="badge bg-secondary">{{ lot.lot_number }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               value="{{ lot.title }}" readonly>
+                                    </td>
+                                    <td>
+                                        <textarea class="form-control form-control-sm" rows="2" readonly>{{ lot.description }}</textarea>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                onclick="editItem({{ loop.index0 }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted">
+                                <span id="selectedCount">{{ lots|length }}</span> of {{ lots|length }} items selected
+                            </span>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('items.import_pdf') }}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-download me-1"></i>Import Selected Items
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h4 class="text-muted">No Items Found</h4>
+                        <p class="text-muted">The PDF processing didn't extract any recognizable items.</p>
+                        <a href="{{ url_for('items.import_pdf') }}" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Try Another PDF
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+
+    <!-- Tips -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-lightbulb me-2"></i>Import Tips
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-check text-success me-1"></i>Before Importing:</h6>
+                    <ul class="text-muted small">
+                        <li>Review titles for accuracy</li>
+                        <li>Check lot numbers are correct</li>
+                        <li>Uncheck items you're not interested in</li>
+                        <li>Edit descriptions if needed</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-info text-info me-1"></i>After Importing:</h6>
+                    <ul class="text-muted small">
+                        <li>Items will be added as "Watchlist" status</li>
+                        <li>You can edit details and add bids later</li>
+                        <li>Set planned max bids and target prices</li>
+                        <li>Use eBay price suggestions for research</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Item Modal -->
+<div class="modal fade" id="editItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editItemForm">
+                    <div class="mb-3">
+                        <label class="form-label">Lot Number</label>
+                        <input type="text" class="form-control" id="editLotNumber">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control" id="editTitle">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="editDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentEditIndex = -1;
+
+function selectAll() {
+    document.querySelectorAll('.lot-checkbox').forEach(cb => cb.checked = true);
+    document.getElementById('selectAllCheckbox').checked = true;
+    updateSelectedCount();
+}
+
+function selectNone() {
+    document.querySelectorAll('.lot-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('selectAllCheckbox').checked = false;
+    updateSelectedCount();
+}
+
+function toggleAll(masterCheckbox) {
+    document.querySelectorAll('.lot-checkbox').forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+    });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const selected = document.querySelectorAll('.lot-checkbox:checked').length;
+    document.getElementById('selectedCount').textContent = selected;
+    
+    // Update master checkbox state
+    const total = document.querySelectorAll('.lot-checkbox').length;
+    const masterCheckbox = document.getElementById('selectAllCheckbox');
+    
+    if (selected === 0) {
+        masterCheckbox.indeterminate = false;
+        masterCheckbox.checked = false;
+    } else if (selected === total) {
+        masterCheckbox.indeterminate = false;
+        masterCheckbox.checked = true;
+    } else {
+        masterCheckbox.indeterminate = true;
+    }
+}
+
+function editItem(index) {
+    currentEditIndex = index;
+    const row = document.querySelector(`input[value="${index}"]`).closest('tr');
+    const cells = row.querySelectorAll('td');
+    
+    // Get current values
+    const lotNumber = cells[1].textContent.trim();
+    const title = cells[2].querySelector('input').value;
+    const description = cells[3].querySelector('textarea').value;
+    
+    // Populate modal
+    document.getElementById('editLotNumber').value = lotNumber === '-' ? '' : lotNumber;
+    document.getElementById('editTitle').value = title;
+    document.getElementById('editDescription').value = description;
+    
+    // Show modal
+    new bootstrap.Modal(document.getElementById('editItemModal')).show();
+}
+
+function saveEdit() {
+    if (currentEditIndex === -1) return;
+    
+    const row = document.querySelector(`input[value="${currentEditIndex}"]`).closest('tr');
+    const cells = row.querySelectorAll('td');
+    
+    // Get edited values
+    const lotNumber = document.getElementById('editLotNumber').value;
+    const title = document.getElementById('editTitle').value;
+    const description = document.getElementById('editDescription').value;
+    
+    // Update the row
+    cells[1].innerHTML = lotNumber 
+        ? `<span class="badge bg-secondary">${lotNumber}</span>`
+        : '<span class="text-muted">-</span>';
+    cells[2].querySelector('input').value = title;
+    cells[3].querySelector('textarea').value = description;
+    
+    // Close modal
+    bootstrap.Modal.getInstance(document.getElementById('editItemModal')).hide();
+    currentEditIndex = -1;
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Add change listeners to checkboxes
+    document.querySelectorAll('.lot-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateSelectedCount);
+    });
+    
+    // Initial count
+    updateSelectedCount();
+});
+
+// Form submission validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const selected = document.querySelectorAll('.lot-checkbox:checked').length;
+    
+    if (selected === 0) {
+        e.preventDefault();
+        alert('Please select at least one item to import.');
+        return;
+    }
+    
+    // Show processing message
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Importing...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}
