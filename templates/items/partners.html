@@ -177,9 +177,9 @@
                         
                         <dt class="col-sm-6">Net Profit:</dt>
                         <dd class="col-sm-6">
-                            {% if item.net_profit() %}
-                                <span class="{% if item.net_profit() > 0 %}text-success{% else %}text-danger{% endif %}">
-                                    ${{ "%.2f"|format(item.net_profit()) }}
+                            {% if item.net_profit %}
+                                <span class="{% if item.net_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                                    ${{ "%.2f"|format(item.net_profit) }}
                                 </span>
                             {% else %}
                                 <span class="text-muted">N/A</span>
@@ -191,7 +191,7 @@
             </div>
 
             <!-- Profit Distribution Preview -->
-            {% if existing_partnerships and item.net_profit() %}
+            {% if existing_partnerships and item.net_profit %}
             <div class="card mt-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
@@ -211,7 +211,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <strong>Your Share ({{ "%.1f"|format(100 - total_percentage) }}%)</strong>
                         <span class="badge bg-primary">
-                            ${{ "%.2f"|format(item.net_profit() * (100 - total_percentage) / 100) }}
+                            ${{ "%.2f"|format(item.net_profit * (100 - total_percentage) / 100) }}
                         </span>
                     </div>
                 </div>

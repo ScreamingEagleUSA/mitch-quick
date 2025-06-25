@@ -116,29 +116,29 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    {% if item.gross_profit() %}
+                    {% if item.gross_profit %}
                     <div class="d-flex justify-content-between">
                         <span>Gross Profit:</span>
-                        <span class="{% if item.gross_profit() > 0 %}text-success{% else %}text-danger{% endif %}">
-                            ${{ "%.2f"|format(item.gross_profit()) }}
+                        <span class="{% if item.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ "%.2f"|format(item.gross_profit) }}
                         </span>
                     </div>
                     {% endif %}
                     
-                    {% if item.net_profit() %}
+                    {% if item.net_profit %}
                     <div class="d-flex justify-content-between">
                         <span>Net Profit:</span>
-                        <span class="{% if item.net_profit() > 0 %}text-success{% else %}text-danger{% endif %}">
-                            ${{ "%.2f"|format(item.net_profit()) }}
+                        <span class="{% if item.net_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ "%.2f"|format(item.net_profit) }}
                         </span>
                     </div>
                     {% endif %}
                     
-                    {% if item.roi_percentage() %}
+                    {% if item.roi_percentage %}
                     <div class="d-flex justify-content-between">
                         <span>ROI:</span>
-                        <span class="{% if item.roi_percentage() > 0 %}text-success{% else %}text-danger{% endif %}">
-                            {{ "%.1f"|format(item.roi_percentage()) }}%
+                        <span class="{% if item.roi_percentage > 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ "%.1f"|format(item.roi_percentage) }}%
                         </span>
                     </div>
                     {% endif %}
@@ -160,7 +160,7 @@
                             <span>{{ partnership.partner.name }}</span>
                             <div>
                                 <span class="badge bg-primary me-2">{{ "%.1f"|format(partnership.pct_share) }}%</span>
-                                {% if item.net_profit() %}
+                                {% if item.net_profit %}
                                 <span class="badge bg-success">
                                     ${{ "%.2f"|format(partnership.calculate_partner_share()) }}
                                 </span>
@@ -173,9 +173,9 @@
                         <hr>
                         <div class="d-flex justify-content-between align-items-center">
                             <strong>Your Share ({{ "%.1f"|format(100 - total_percentage) }}%)</strong>
-                            {% if item.net_profit() %}
+                            {% if item.net_profit %}
                             <span class="badge bg-primary">
-                                ${{ "%.2f"|format(item.net_profit() * (100 - total_percentage) / 100) }}
+                                ${{ "%.2f"|format(item.net_profit * (100 - total_percentage) / 100) }}
                             </span>
                             {% endif %}
                         </div>

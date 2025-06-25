@@ -206,18 +206,22 @@ def manage_partners(item_id):
         
         return redirect(url_for('items.manage_partners', item_id=item_id))
     
-    # Get all partners and existing partnerships
-    partners = Partner.query.all()
-    existing_partnerships = ItemPartner.query.filter_by(item_id=item_id).all()
-    
-    # Calculate total percentage
-    total_percentage = sum(p.pct_share for p in existing_partnerships) if existing_partnerships else 0
-    
-    return render_template('items/partners.html', 
-                         item=item, 
-                         partners=partners, 
-                         existing_partnerships=existing_partnerships,
-                         total_percentage=total_percentage)
+    try:
+        # Get all partners and existing partnerships
+        partners = Partner.query.all()
+        existing_partnerships = ItemPartner.query.filter_by(item_id=item_id).all()
+        
+        # Calculate total percentage
+        total_percentage = sum(float(p.pct_share) for p in existing_partnerships) if existing_partnerships else 0.0
+        
+        return render_template('items/partners.html', 
+                             item=item, 
+                             partners=partners, 
+                             existing_partnerships=existing_partnerships,
+                             total_percentage=total_percentage)
+    except Exception as e:
+        flash(f'Error loading partner management: {str(e)}', 'danger')
+        return redirect(url_for('items.edit', item_id=item_id))
 
 @items_bp.route('/import', methods=['GET', 'POST'])
 @require_login
