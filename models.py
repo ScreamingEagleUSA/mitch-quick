@@ -106,7 +106,7 @@ class Item(db.Model):
         net = self.net_profit
         if net is None:
             return None
-        total_investment = float(self.purchase_price) + float(self.refurb_cost or 0)
+        total_investment = float(self.purchase_price) + float(self.refurb_cost or 0) + self.total_expenses
         return (net / total_investment) * 100 if total_investment > 0 else None
     
     @property
@@ -114,7 +114,7 @@ class Item(db.Model):
         """Calculate break-even sale price"""
         if not self.purchase_price:
             return None
-        return float(self.purchase_price) + float(self.refurb_cost or 0) + float(self.sale_fees or 0) + float(self.shipping_cost or 0)
+        return float(self.purchase_price) + float(self.refurb_cost or 0) + self.total_expenses + float(self.sale_fees or 0) + float(self.shipping_cost or 0)
 
 class ItemPartner(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -128,3 +128,19 @@ class ItemPartner(db.Model):
         if self.item.net_profit is None:
             return None
         return (float(self.pct_share) / 100) * self.item.net_profit
+
+
+class ItemExpense(db.Model):
+    """Itemized expenses associated with items"""
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
+    description = db.Column(db.String(200), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    date = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)
+    category = db.Column(db.String(100))  # e.g., 'shipping', 'repair', 'storage', 'other'
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship
+    item = db.relationship('Item', backref=db.backref('expenses', lazy=True, cascade='all, delete-orphan'))
