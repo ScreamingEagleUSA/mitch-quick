@@ -308,7 +308,7 @@
                             <div>
                                 <h6 class="mb-1">{{ item.title }}</h6>
                                 <small class="text-muted">
-                                    Sold: ${{ "%.2f"|format(item.sale_price) }}
+                                    Sold: ${{ "%.2f"|format(item.sale_price or 0) }}
                                     | Profit: <span class="{{ 'text-success' if item.net_profit and item.net_profit >= 0 else 'text-danger' }}">
                                         ${{ "%.2f"|format(item.net_profit) if item.net_profit else '0.00' }}
                                     </span>
