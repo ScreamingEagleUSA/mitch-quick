@@ -226,13 +226,9 @@ function updateAllPrices() {
 }
 
 function exportWatchlist() {
-    // Create CSV export of watchlist
-    const items = {{ items | tojson }};
-    
-    if (items.length === 0) {
-        alert('No items to export');
-        return;
-    }
+    // Create CSV export of watchlist - redirect to server endpoint
+    window.location.href = '/items/export?status=watch';
+}
 
     let csv = 'Auction,Lot Number,Title,Description,Max Bid,Target Price,eBay Suggested,Created\n';
     
