@@ -182,17 +182,19 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if item.status.value == 'sold' and item.net_profit() is not none %}
-                                            <strong class="{{ 'text-success' if item.net_profit() >= 0 else 'text-danger' }}">
-                                                ${{ "%.2f"|format(item.net_profit()) }}
+                                        {% if item.status.value == 'sold' and item.sale_price and item.purchase_price %}
+                                            {% set net_profit = (item.sale_price or 0) - (item.purchase_price or 0) - (item.refurb_cost or 0) - (item.sale_fees or 0) - (item.shipping_cost or 0) %}
+                                            <strong class="{{ 'text-success' if net_profit >= 0 else 'text-danger' }}">
+                                                ${{ "%.2f"|format(net_profit) }}
                                             </strong>
-                                            {% if item.roi_percentage() is not none %}
-                                            <br><small class="{{ 'text-success' if item.roi_percentage() >= 0 else 'text-danger' }}">
-                                                {{ "%.1f"|format(item.roi_percentage()) }}% ROI
+                                            {% if item.purchase_price and item.purchase_price > 0 %}
+                                            {% set roi = ((net_profit / item.purchase_price) * 100) %}
+                                            <br><small class="{{ 'text-success' if roi >= 0 else 'text-danger' }}">
+                                                {{ "%.1f"|format(roi) }}% ROI
                                             </small>
                                             {% endif %}
                                         {% elif item.status.value in ['won', 'listed'] and item.target_resale_price and item.purchase_price %}
-                                            {% set estimated_profit = item.target_resale_price - item.purchase_price - (item.refurb_cost or 0) %}
+                                            {% set estimated_profit = (item.target_resale_price or 0) - (item.purchase_price or 0) - (item.refurb_cost or 0) %}
                                             <small class="text-muted">
                                                 Est: ${{ "%.2f"|format(estimated_profit) }}
                                             </small>
