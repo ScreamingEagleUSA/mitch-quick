@@ -3,314 +3,194 @@
 {% block title %}{{ item.title }} - Mitch Quick{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">{{ item.title }}</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="{{ url_for('items.edit', item_id=item.id) }}" class="btn btn-primary">
-                <i class="fas fa-edit me-1"></i>Edit Item
-            </a>
-            {% if item.status.value == 'sold' and item.partners %}
-                <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-outline-warning">
-                    <i class="fas fa-users me-1"></i>Manage Partners
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-box me-2"></i>{{ item.title }}
+            </h1>
+            <p class="text-muted">
+                {% if item.lot_number %}Lot {{ item.lot_number }} • {% endif %}
+                {{ item.auction.title if item.auction else 'No auction' }}
+            </p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('items.edit', item_id=item.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit me-2"></i>Edit Item
                 </a>
+                <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-success">
+                    <i class="fas fa-users me-2"></i>Manage Partners
+                </a>
+                <a href="{{ url_for('items.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Items
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Item Details -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Item Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Status:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-secondary">{{ item.status.value|title }}</span>
+                        </dd>
+                        
+                        {% if item.description %}
+                        <dt class="col-sm-3">Description:</dt>
+                        <dd class="col-sm-9">{{ item.description }}</dd>
+                        {% endif %}
+                        
+                        {% if item.planned_max_bid %}
+                        <dt class="col-sm-3">Planned Max Bid:</dt>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.planned_max_bid) }}</dd>
+                        {% endif %}
+                        
+                        {% if item.target_resale_price %}
+                        <dt class="col-sm-3">Target Resale:</dt>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.target_resale_price) }}</dd>
+                        {% endif %}
+                        
+                        {% if item.purchase_price %}
+                        <dt class="col-sm-3">Purchase Price:</dt>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.purchase_price) }}</dd>
+                        {% endif %}
+                        
+                        {% if item.refurb_cost %}
+                        <dt class="col-sm-3">Refurb Cost:</dt>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.refurb_cost) }}</dd>
+                        {% endif %}
+                        
+                        {% if item.list_date %}
+                        <dt class="col-sm-3">List Date:</dt>
+                        <dd class="col-sm-9">{{ item.list_date.strftime('%Y-%m-%d') }}</dd>
+                        {% endif %}
+                        
+                        {% if item.list_channel %}
+                        <dt class="col-sm-3">List Channel:</dt>
+                        <dd class="col-sm-9">{{ item.list_channel }}</dd>
+                        {% endif %}
+                        
+                        {% if item.sale_date %}
+                        <dt class="col-sm-3">Sale Date:</dt>
+                        <dd class="col-sm-9">{{ item.sale_date.strftime('%Y-%m-%d') }}</dd>
+                        {% endif %}
+                        
+                        {% if item.sale_price %}
+                        <dt class="col-sm-3">Sale Price:</dt>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.sale_price) }}</dd>
+                        {% endif %}
+                        
+                        {% if item.sale_fees %}
+                        <dt class="col-sm-3">Sale Fees:</dt>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.sale_fees) }}</dd>
+                        {% endif %}
+                        
+                        {% if item.shipping_cost %}
+                        <dt class="col-sm-3">Shipping Cost:</dt>
+                        <dd class="col-sm-9">${{ "%.2f"|format(item.shipping_cost) }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary & Partners -->
+        <div class="col-md-4">
+            <!-- Financial Summary -->
+            {% if item.status.value in ['sold', 'won'] %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-calculator me-2"></i>Financial Summary
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if item.gross_profit() %}
+                    <div class="d-flex justify-content-between">
+                        <span>Gross Profit:</span>
+                        <span class="{% if item.gross_profit() > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ "%.2f"|format(item.gross_profit()) }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.net_profit() %}
+                    <div class="d-flex justify-content-between">
+                        <span>Net Profit:</span>
+                        <span class="{% if item.net_profit() > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ "%.2f"|format(item.net_profit()) }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.roi_percentage() %}
+                    <div class="d-flex justify-content-between">
+                        <span>ROI:</span>
+                        <span class="{% if item.roi_percentage() > 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ "%.1f"|format(item.roi_percentage()) }}%
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
             {% endif %}
-        </div>
-        <a href="{{ url_for('items.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-1"></i>Back to Items
-        </a>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-md-8">
-        <!-- Basic Information -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Item Details</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Auction:</strong>
-                        <div class="mb-2">
-                            <a href="{{ url_for('auctions.view', auction_id=item.auction.id) }}">
-                                {{ item.auction.title }}
-                            </a>
-                            <small class="text-muted d-block">{{ item.auction.date.strftime('%B %d, %Y') }}</small>
+            <!-- Partners -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>Partners
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if item.partners %}
+                        {% for partnership in item.partners %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ partnership.partner.name }}</span>
+                            <div>
+                                <span class="badge bg-primary me-2">{{ "%.1f"|format(partnership.pct_share) }}%</span>
+                                {% if item.net_profit() %}
+                                <span class="badge bg-success">
+                                    ${{ "%.2f"|format(partnership.calculate_partner_share()) }}
+                                </span>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Status:</strong>
-                        <div class="mb-2">
-                            <span class="badge bg-{% if item.status.value == 'watch' %}secondary{% elif item.status.value == 'won' %}warning{% elif item.status.value == 'listed' %}info{% else %}success{% endif %} fs-6">
-                                {{ item.status.value.title() }}
+                        {% endfor %}
+                        
+                        {% set total_percentage = item.partners|sum(attribute='pct_share') %}
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>Your Share ({{ "%.1f"|format(100 - total_percentage) }}%)</strong>
+                            {% if item.net_profit() %}
+                            <span class="badge bg-primary">
+                                ${{ "%.2f"|format(item.net_profit() * (100 - total_percentage) / 100) }}
                             </span>
-                        </div>
-                    </div>
-                </div>
-                
-                {% if item.lot_number %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Lot Number:</strong>
-                        <div class="mb-2">{{ item.lot_number }}</div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                {% if item.description %}
-                <div class="row">
-                    <div class="col-12">
-                        <strong>Description:</strong>
-                        <div class="mb-2">{{ item.description }}</div>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- Financial Information -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Financial Summary</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    {% if item.planned_max_bid %}
-                    <div class="col-md-3 mb-3">
-                        <div class="text-center p-3 border rounded">
-                            <div class="h4 mb-1">${{ "%.2f"|format(item.planned_max_bid) }}</div>
-                            <small class="text-muted">Planned Max Bid</small>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if item.purchase_price %}
-                    <div class="col-md-3 mb-3">
-                        <div class="text-center p-3 border rounded">
-                            <div class="h4 mb-1">${{ "%.2f"|format(item.total_cost) }}</div>
-                            <small class="text-muted">Total Cost</small>
-                            {% if item.refurb_cost and item.refurb_cost > 0 %}
-                                <div class="small text-muted">
-                                    (${{ "%.2f"|format(item.purchase_price) }} + ${{ "%.2f"|format(item.refurb_cost) }})
-                                </div>
                             {% endif %}
                         </div>
-                    </div>
+                    {% else %}
+                        <p class="text-muted">No partners assigned to this item.</p>
                     {% endif %}
                     
-                    {% if item.target_resale_price %}
-                    <div class="col-md-3 mb-3">
-                        <div class="text-center p-3 border rounded">
-                            <div class="h4 mb-1">${{ "%.2f"|format(item.target_resale_price) }}</div>
-                            <small class="text-muted">Target Price</small>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if item.sale_price %}
-                    <div class="col-md-3 mb-3">
-                        <div class="text-center p-3 border rounded">
-                            <div class="h4 mb-1">${{ "%.2f"|format(item.sale_price) }}</div>
-                            <small class="text-muted">Sale Price</small>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-                
-                {% if item.status.value == 'sold' and item.purchase_price and item.sale_price %}
-                <hr>
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <div class="text-center p-3 border rounded">
-                            <div class="h4 mb-1 {% if item.gross_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                ${{ "%.2f"|format(item.gross_profit) }}
-                            </div>
-                            <small class="text-muted">Gross Profit</small>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="text-center p-3 border rounded">
-                            <div class="h4 mb-1 {% if item.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                ${{ "%.2f"|format(item.net_profit) }}
-                            </div>
-                            <small class="text-muted">Net Profit</small>
-                            {% if item.sale_fees or item.shipping_cost %}
-                                <div class="small text-muted">
-                                    After ${{ "%.2f"|format((item.sale_fees or 0) + (item.shipping_cost or 0)) }} fees
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="text-center p-3 border rounded">
-                            <div class="h4 mb-1 {% if item.roi_percentage >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                {{ "%.1f"|format(item.roi_percentage) }}%
-                            </div>
-                            <small class="text-muted">ROI</small>
-                        </div>
+                    <div class="d-grid mt-3">
+                        <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit me-1"></i>Manage Partners
+                        </a>
                     </div>
                 </div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- Partner Shares (if applicable) -->
-        {% if item.status.value == 'sold' and item.partners %}
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Partner Shares</h5>
-            </div>
-            <div class="card-body">
-                {% if item.net_profit > 0 %}
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Partner</th>
-                                    <th>Share %</th>
-                                    <th>Share Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for partnership in item.partners %}
-                                <tr>
-                                    <td>{{ partnership.partner.name }}</td>
-                                    <td>{{ "%.1f"|format(partnership.pct_share) }}%</td>
-                                    <td class="text-success">${{ "%.2f"|format(partnership.partner_share_amount) }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <p class="text-muted mb-0">No profit to distribute among partners.</p>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-    </div>
-    
-    <div class="col-md-4">
-        <!-- Timeline -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Timeline</h5>
-            </div>
-            <div class="card-body">
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-secondary"></div>
-                        <div class="timeline-content">
-                            <h6 class="mb-1">Added to Watchlist</h6>
-                            <small class="text-muted">{{ item.created_at.strftime('%m/%d/%Y %I:%M %p') }}</small>
-                        </div>
-                    </div>
-                    
-                    {% if item.status.value in ['won', 'listed', 'sold'] %}
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-warning"></div>
-                        <div class="timeline-content">
-                            <h6 class="mb-1">Item Won</h6>
-                            {% if item.purchase_price %}
-                                <div>Purchase Price: ${{ "%.2f"|format(item.purchase_price) }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if item.status.value in ['listed', 'sold'] and item.list_date %}
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-info"></div>
-                        <div class="timeline-content">
-                            <h6 class="mb-1">Listed for Sale</h6>
-                            <div>{{ item.list_date.strftime('%m/%d/%Y') }}</div>
-                            {% if item.list_channel %}
-                                <div>Channel: {{ item.list_channel }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if item.status.value == 'sold' and item.sale_date %}
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-success"></div>
-                        <div class="timeline-content">
-                            <h6 class="mb-1">Item Sold</h6>
-                            <div>{{ item.sale_date.strftime('%m/%d/%Y') }}</div>
-                            {% if item.sale_price %}
-                                <div>Sale Price: ${{ "%.2f"|format(item.sale_price) }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <!-- Quick Actions -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                {% if item.status.value == 'watch' %}
-                    <button type="button" class="btn btn-outline-info btn-sm w-100 mb-2" 
-                            hx-get="{{ url_for('items.get_price_suggestion', item_id=item.id) }}"
-                            hx-target="#price-suggestion">
-                        <i class="fas fa-search-dollar me-1"></i>Get Price Suggestion
-                    </button>
-                    <div id="price-suggestion" class="mb-2"></div>
-                {% endif %}
-                
-                {% if item.auction.url %}
-                    <a href="{{ item.auction.url }}" target="_blank" class="btn btn-outline-primary btn-sm w-100 mb-2">
-                        <i class="fas fa-external-link-alt me-1"></i>View Auction
-                    </a>
-                {% endif %}
-                
-                <a href="{{ url_for('items.edit', item_id=item.id) }}" class="btn btn-primary btn-sm w-100">
-                    <i class="fas fa-edit me-1"></i>Edit Item
-                </a>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
-
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: 15px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: var(--bs-border-color);
-}
-
-.timeline-item {
-    position: relative;
-    margin-bottom: 20px;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: -22px;
-    top: 5px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 2px solid var(--bs-body-bg);
-}
-
-.timeline-content h6 {
-    margin-bottom: 5px;
-}
-</style>
 {% endblock %}

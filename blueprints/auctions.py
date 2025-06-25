@@ -15,7 +15,10 @@ def index():
     
     auctions = Auction.query.order_by(Auction.date.desc()).all()
     
-    return render_template('auctions/index.html', auctions=auctions)
+    from datetime import date
+    today = date.today()
+    
+    return render_template('auctions/index.html', auctions=auctions, today=today)
 
 @auctions_bp.route('/create', methods=['GET', 'POST'])
 @require_login

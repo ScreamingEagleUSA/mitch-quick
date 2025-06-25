@@ -321,6 +321,48 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Partner Management Section (for editing existing items) -->
+        {% if item and item.id %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>Partners
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% set existing_partnerships = item.partners %}
+                    {% if existing_partnerships %}
+                        <div class="mb-3">
+                            {% for partnership in existing_partnerships %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>{{ partnership.partner.name }}</span>
+                                <span class="badge bg-primary">{{ "%.1f"|format(partnership.pct_share) }}%</span>
+                            </div>
+                            {% endfor %}
+                            {% set total_percentage = existing_partnerships|sum(attribute='pct_share') %}
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>Total Allocated</strong>
+                                <span class="badge {% if total_percentage > 100 %}bg-danger{% elif total_percentage == 100 %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ "%.1f"|format(total_percentage) }}%
+                                </span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted small">No partners assigned</p>
+                    {% endif %}
+                    
+                    <div class="d-grid">
+                        <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit me-1"></i>Manage Partners
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
