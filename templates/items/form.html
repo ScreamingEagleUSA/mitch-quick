@@ -279,9 +279,7 @@
                     <h5 class="card-title mb-0">
                         <i class="fas fa-users me-2"></i>Partners
                     </h5>
-                    <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-sm btn-outline-primary">
-                        Manage
-                    </a>
+
                 </div>
                 <div class="card-body">
                     {% for partnership in item.partners %}
@@ -310,9 +308,7 @@
                                 hx-swap="none">
                             <i class="fas fa-sync-alt me-2"></i>Update eBay Price
                         </button>
-                        <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-outline-info">
-                            <i class="fas fa-users me-2"></i>Manage Partners
-                        </a>
+
                         {% endif %}
                         <a href="{{ url_for('items.import_pdf') }}" class="btn btn-outline-primary">
                             <i class="fas fa-file-upload me-2"></i>Import PDF
@@ -358,6 +354,23 @@
                         <a href="{{ url_for('items.manage_partners', item_id=item.id) }}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-edit me-1"></i>Manage Partners
                         </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Add Partner Section for New Items -->
+        {% else %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Partners
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Tip:</strong> Save the item first, then you can add partners to share profits.
                     </div>
                 </div>
             </div>
