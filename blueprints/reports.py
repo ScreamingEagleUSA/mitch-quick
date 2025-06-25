@@ -64,9 +64,20 @@ def profit_analysis():
     if roi_values:
         analysis_data['avg_roi'] = sum(roi_values) / len(roi_values)
     
-    # Get top performing items
+    # Get top performing items (convert to serializable format)
     top_items = sorted(sold_items, key=lambda x: x.net_profit or 0, reverse=True)[:10]
-    analysis_data['top_performers'] = top_items
+    analysis_data['top_performers'] = [
+        {
+            'id': item.id,
+            'title': item.title,
+            'sale_price': float(item.sale_price) if item.sale_price else 0,
+            'purchase_price': float(item.purchase_price) if item.purchase_price else 0,
+            'net_profit': item.net_profit or 0,
+            'roi_percentage': item.roi_percentage or 0,
+            'auction_title': item.auction.title if item.auction else 'Unknown'
+        }
+        for item in top_items
+    ]
     
     # Category breakdown by auction
     for item in sold_items:

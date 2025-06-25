@@ -230,7 +230,7 @@
                                 <th>Sale Price</th>
                                 <th>Net Profit</th>
                                 <th>ROI</th>
-                                <th>Sale Date</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -252,12 +252,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if item.auction %}
-                                    <strong>{{ item.auction.title }}</strong><br>
-                                    <small class="text-muted">{{ item.auction.date.strftime('%m/%d/%Y') }}</small>
-                                    {% else %}
-                                    <span class="text-muted">No auction</span>
-                                    {% endif %}
+                                    <strong>{{ item.auction_title }}</strong>
                                 </td>
                                 <td>
                                     <span class="text-muted">${{ "%.2f"|format(item.purchase_price) if item.purchase_price else 'N/A' }}</span>
