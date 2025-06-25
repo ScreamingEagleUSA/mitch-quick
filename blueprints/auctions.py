@@ -122,12 +122,14 @@ def delete(auction_id):
 @require_login
 def view(auction_id):
     """View auction details with items"""
+    from datetime import date
     auction = Auction.query.get_or_404(auction_id)
     
     # Get items for this auction
     items = Item.query.filter_by(auction_id=auction_id).order_by(Item.lot_number).all()
     
-    return render_template('auctions/view.html', auction=auction, items=items)
+    today = date.today()
+    return render_template('auctions/view.html', auction=auction, items=items, today=today)
 
 @auctions_bp.route('/api/search')
 @require_login
