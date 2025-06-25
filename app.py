@@ -34,11 +34,17 @@ with app.app_context():
     db.create_all()
     logging.info("Database tables created")
     
-    # Add custom template filter
-    @app.template_filter('tojsonfilter')
-    def to_json_filter(obj):
-        import json
-        return json.dumps(obj)
+    # Add template functions
+    @app.template_global()
+    def current_time():
+        from datetime import datetime
+        return datetime.now().strftime('%Y-%m-%d %H:%M')
+    
+    # Add last updated to context processor
+    @app.context_processor
+    def inject_last_updated():
+        from datetime import datetime
+        return {'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M')}
 
 # Make session permanent
 @app.before_request
