@@ -443,3 +443,68 @@ def view(item_id):
     item = Item.query.get_or_404(item_id)
     return render_template('items/view.html', item=item)
 
+@items_bp.route('/<int:item_id>/sell-pieces', methods=['GET', 'POST'])
+@require_login
+def sell_pieces(item_id):
+    """Sell pieces from a multiple-piece item"""
+    item = Item.query.get_or_404(item_id)
+    
+    if not item.multiple_pieces:
+        flash('This item is not configured for multiple pieces sales.', 'warning')
+        return redirect(url_for('items.view', item_id=item_id))
+    
+    if request.method == 'POST':
+        try:
+            pieces_sold = int(request.form.get('pieces_sold', 0))
+            sale_price_per_piece = float(request.form.get('sale_price_per_piece', 0))
+            sale_date_str = request.form.get('sale_date')
+            buyer_info = request.form.get('buyer_info', '').strip()
+            sale_channel = request.form.get('sale_channel', '').strip()
+            notes = request.form.get('notes', '').strip()
+            
+            if pieces_sold <= 0:
+                flash('Number of pieces sold must be greater than 0.', 'danger')
+                return redirect(request.url)
+            
+            if pieces_sold > item.pieces_remaining:
+                flash(f'Cannot sell {pieces_sold} pieces. Only {item.pieces_remaining} pieces remaining.', 'danger')
+                return redirect(request.url)
+            
+            if sale_price_per_piece <= 0:
+                flash('Sale price per piece must be greater than 0.', 'danger')
+                return redirect(request.url)
+            
+            # Create the sale record
+            sale = ItemSale(
+                item_id=item.id,
+                pieces_sold=pieces_sold,
+                sale_price_per_piece=sale_price_per_piece,
+                total_sale_amount=pieces_sold * sale_price_per_piece,
+                sale_date=datetime.strptime(sale_date_str, '%Y-%m-%d').date() if sale_date_str else datetime.utcnow().date(),
+                buyer_info=buyer_info,
+                sale_channel=sale_channel,
+                notes=notes
+            )
+            
+            # Update remaining pieces
+            item.pieces_remaining = item.pieces_remaining - pieces_sold
+            
+            # If all pieces are sold, update item status
+            if item.pieces_remaining == 0:
+                item.status = ItemStatus.SOLD
+            
+            db.session.add(sale)
+            db.session.commit()
+            
+            flash(f'Successfully sold {pieces_sold} pieces for ${sale_price_per_piece:.2f} each. Total: ${sale.total_sale_amount:.2f}', 'success')
+            return redirect(url_for('items.view', item_id=item_id))
+            
+        except ValueError as e:
+            flash('Please enter valid numbers for pieces and price.', 'danger')
+            return redirect(request.url)
+        except Exception as e:
+            flash(f'Error recording sale: {str(e)}', 'danger')
+            return redirect(request.url)
+    
+    return render_template('items/sell_pieces.html', item=item)
+

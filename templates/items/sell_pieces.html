@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Sell Pieces - {{ item.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-shopping-cart me-2"></i>Sell Pieces</h2>
+                    <p class="text-muted">{{ item.title }} - {{ item.pieces_remaining }} pieces remaining</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('items.view', item_id=item.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Item
+                    </a>
+                </div>
+            </div>
+            
+            {% if item.pieces_remaining <= 0 %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                All pieces from this item have been sold.
+            </div>
+            {% else %}
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-plus-circle me-2"></i>Record Piece Sale
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="pieces_sold" class="form-label">Pieces to Sell <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="pieces_sold" name="pieces_sold" 
+                                               min="1" max="{{ item.pieces_remaining }}" required>
+                                        <div class="form-text">Maximum: {{ item.pieces_remaining }} pieces available</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="sale_price_per_piece" class="form-label">Price per Piece <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="sale_price_per_piece" name="sale_price_per_piece" 
+                                                   step="0.01" min="0.01" required>
+                                        </div>
+                                        <div class="form-text">Cost per piece: ${{ "%.2f"|format(item.cost_per_piece) if item.cost_per_piece else 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="sale_date" class="form-label">Sale Date <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="sale_date" name="sale_date" 
+                                               value="{{ datetime.now().strftime('%Y-%m-%d') }}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="sale_channel" class="form-label">Sale Channel</label>
+                                        <select class="form-select" id="sale_channel" name="sale_channel">
+                                            <option value="">Select channel...</option>
+                                            <option value="Facebook Marketplace">Facebook Marketplace</option>
+                                            <option value="eBay">eBay</option>
+                                            <option value="Craigslist">Craigslist</option>
+                                            <option value="Local Pickup">Local Pickup</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="buyer_info" class="form-label">Buyer Information</label>
+                                    <input type="text" class="form-control" id="buyer_info" name="buyer_info" 
+                                           placeholder="Buyer name, contact info, etc.">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                              placeholder="Any additional notes about this sale..."></textarea>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('items.view', item_id=item.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-check me-2"></i>Record Sale
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Item Summary
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center mb-3">
+                                <div class="col-6">
+                                    <strong>{{ item.pieces_total }}</strong><br>
+                                    <small class="text-muted">Total Pieces</small>
+                                </div>
+                                <div class="col-6">
+                                    <strong>{{ item.pieces_remaining }}</strong><br>
+                                    <small class="text-muted">Remaining</small>
+                                </div>
+                            </div>
+                            
+                            {% if item.cost_per_piece %}
+                            <div class="row text-center mb-3">
+                                <div class="col-12">
+                                    <strong>${{ "%.2f"|format(item.cost_per_piece) }}</strong><br>
+                                    <small class="text-muted">Cost per Piece</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if item.pieces_sold and item.pieces_sold > 0 %}
+                            <div class="row text-center mb-3">
+                                <div class="col-6">
+                                    <strong>{{ item.pieces_sold }}</strong><br>
+                                    <small class="text-muted">Pieces Sold</small>
+                                </div>
+                                <div class="col-6">
+                                    <strong>${{ "%.2f"|format(item.total_piece_sales_revenue) }}</strong><br>
+                                    <small class="text-muted">Total Revenue</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if item.piece_sales %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-history me-2"></i>Recent Sales
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% for sale in item.piece_sales[-3:] %}
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>
+                                    <strong>{{ sale.pieces_sold }} pieces</strong><br>
+                                    <small class="text-muted">{{ sale.sale_date.strftime('%m/%d/%Y') }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <strong>${{ "%.2f"|format(sale.total_sale_amount) }}</strong><br>
+                                    <small class="text-muted">${{ "%.2f"|format(sale.sale_price_per_piece) }}/piece</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const piecesInput = document.getElementById('pieces_sold');
+    const priceInput = document.getElementById('sale_price_per_piece');
+    
+    function updateTotal() {
+        const pieces = parseFloat(piecesInput.value) || 0;
+        const price = parseFloat(priceInput.value) || 0;
+        const total = pieces * price;
+        
+        // You could add a total display here if desired
+        console.log(`Total: $${total.toFixed(2)}`);
+    }
+    
+    piecesInput.addEventListener('input', updateTotal);
+    priceInput.addEventListener('input', updateTotal);
+});
+</script>
+{% endblock %}
