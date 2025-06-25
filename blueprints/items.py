@@ -272,15 +272,28 @@ def import_pdf():
                 flash('No lots could be extracted from the PDF. Please check the file format.', 'warning')
                 return redirect(request.url)
             
-            # Store in session for preview
+            # Store in a temporary file instead of session to avoid size limits
+            import tempfile
             import json
-            from flask import session
-            session['import_preview'] = {
-                'auction_id': auction_id,
-                'lots': lots
-            }
+            import os
             
-            return redirect(url_for('items.import_preview'))
+            # Create temp file for lots data
+            temp_fd, temp_path = tempfile.mkstemp(suffix='.json', prefix='import_')
+            try:
+                with os.fdopen(temp_fd, 'w') as tmp_file:
+                    json.dump({
+                        'auction_id': auction_id,
+                        'lots': lots
+                    }, tmp_file)
+                
+                # Store just the filename in session
+                session['import_temp_file'] = os.path.basename(temp_path)
+                
+                flash(f'Successfully parsed {len(lots)} lots from PDF.', 'success')
+                return redirect(url_for('items.import_preview'))
+            except Exception as e:
+                os.unlink(temp_path)
+                raise e
             
         except Exception as e:
             flash(f'Error processing PDF: {str(e)}', 'danger')
@@ -294,12 +307,25 @@ def import_pdf():
 def import_preview():
     """Preview and confirm PDF import"""
     from flask import session
+    import tempfile
+    import json
+    import os
     
-    if 'import_preview' not in session:
+    if 'import_temp_file' not in session:
         flash('No import data found. Please upload a PDF first.', 'warning')
         return redirect(url_for('items.import_pdf'))
     
-    preview_data = session['import_preview']
+    # Load data from temp file
+    temp_filename = session['import_temp_file']
+    temp_path = os.path.join(tempfile.gettempdir(), temp_filename)
+    
+    try:
+        with open(temp_path, 'r') as f:
+            preview_data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        flash('Import data expired. Please upload the PDF again.', 'warning')
+        session.pop('import_temp_file', None)
+        return redirect(url_for('items.import_pdf'))
     
     if request.method == 'POST':
         selected_lots = request.form.getlist('selected_lots')
@@ -330,8 +356,14 @@ def import_preview():
             
             db.session.commit()
             
-            # Clear session data
-            session.pop('import_preview', None)
+            # Clear session data and temp file
+            temp_filename = session.pop('import_temp_file', None)
+            if temp_filename:
+                temp_path = os.path.join(tempfile.gettempdir(), temp_filename)
+                try:
+                    os.unlink(temp_path)
+                except OSError:
+                    pass
             
             flash(f'Successfully imported {imported_count} items!', 'success')
             return redirect(url_for('items.index'))
