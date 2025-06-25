@@ -227,7 +227,7 @@ function updateAllPrices() {
 
 function exportWatchlist() {
     // Create CSV export of watchlist
-    const items = {{ items | tojsonfilter }};
+    const items = {{ items | tojson }};
     
     if (items.length === 0) {
         alert('No items to export');

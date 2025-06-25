@@ -127,9 +127,18 @@ Mitch Quick is a comprehensive web application for managing auction flipping bus
 - Secure filename handling
 - Upload folder configuration for PDF processing
 
+## Recent Changes
+
+- June 25, 2025: Migrated from custom authentication to Replit OpenID Connect system
+- June 25, 2025: Fixed multiple template errors (tojsonfilter → tojson, undefined moment function)
+- June 25, 2025: Added CSV import/export functionality for complete inventory management
+- June 25, 2025: Created missing inventory and sold items templates
+- June 25, 2025: Added export/import buttons to inventory management interface
+- June 25, 2025: eBay API integration ready (awaiting user credentials)
+
 ## Changelog
 
-- June 25, 2025. Initial setup
+- June 25, 2025. Initial setup and Replit authentication migration
 
 ## User Preferences
 

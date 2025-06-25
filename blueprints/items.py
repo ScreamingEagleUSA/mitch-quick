@@ -333,6 +333,188 @@ def inventory():
     items = Item.query.filter_by(status=ItemStatus.WON).order_by(Item.updated_at.desc()).all()
     return render_template('items/inventory.html', items=items)
 
+@items_bp.route('/inventory/export')
+@require_login
+def export_inventory():
+    """Export inventory as CSV"""
+    import csv
+    import io
+    from flask import make_response
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        'ID', 'Auction', 'Lot Number', 'Title', 'Description', 
+        'Purchase Price', 'Refurb Cost', 'Status', 'Target Resale Price',
+        'List Date', 'List Channel', 'Sale Date', 'Sale Price', 'Sale Fees',
+        'Shipping Cost', 'eBay Suggested Price', 'Created At'
+    ])
+    
+    # Write data
+    items = Item.query.all()
+    for item in items:
+        writer.writerow([
+            item.id,
+            item.auction.title if item.auction else '',
+            item.lot_number or '',
+            item.title,
+            item.description or '',
+            float(item.purchase_price) if item.purchase_price else '',
+            float(item.refurb_cost) if item.refurb_cost else 0,
+            item.status.value if item.status else '',
+            float(item.target_resale_price) if item.target_resale_price else '',
+            item.list_date.strftime('%Y-%m-%d') if item.list_date else '',
+            item.list_channel or '',
+            item.sale_date.strftime('%Y-%m-%d') if item.sale_date else '',
+            float(item.sale_price) if item.sale_price else '',
+            float(item.sale_fees) if item.sale_fees else 0,
+            float(item.shipping_cost) if item.shipping_cost else 0,
+            float(item.ebay_suggested_price) if item.ebay_suggested_price else '',
+            item.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        ])
+    
+    output.seek(0)
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = 'attachment; filename=inventory_export.csv'
+    
+    return response
+
+@items_bp.route('/inventory/import', methods=['GET', 'POST'])
+@require_login
+def import_inventory():
+    """Import/update inventory from CSV"""
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file selected', 'error')
+            return redirect(request.url)
+        
+        file = request.files['file']
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(request.url)
+        
+        if file and file.filename.endswith('.csv'):
+            try:
+                import csv
+                import io
+                from decimal import Decimal
+                
+                # Read CSV file
+                stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+                csv_input = csv.DictReader(stream)
+                
+                updated_count = 0
+                created_count = 0
+                
+                for row in csv_input:
+                    # Try to find existing item by ID
+                    item = None
+                    if row.get('ID') and row['ID'].strip():
+                        try:
+                            item = Item.query.get(int(row['ID']))
+                        except ValueError:
+                            pass
+                    
+                    # If no item found by ID, create new one
+                    if not item:
+                        item = Item()
+                        created_count += 1
+                    else:
+                        updated_count += 1
+                    
+                    # Update item fields
+                    if row.get('Title'):
+                        item.title = row['Title'].strip()
+                    if row.get('Description'):
+                        item.description = row['Description'].strip()
+                    if row.get('Lot Number'):
+                        item.lot_number = row['Lot Number'].strip()
+                    
+                    # Handle numeric fields
+                    if row.get('Purchase Price') and row['Purchase Price'].strip():
+                        try:
+                            item.purchase_price = Decimal(row['Purchase Price'])
+                        except:
+                            pass
+                    
+                    if row.get('Refurb Cost') and row['Refurb Cost'].strip():
+                        try:
+                            item.refurb_cost = Decimal(row['Refurb Cost'])
+                        except:
+                            pass
+                    
+                    if row.get('Target Resale Price') and row['Target Resale Price'].strip():
+                        try:
+                            item.target_resale_price = Decimal(row['Target Resale Price'])
+                        except:
+                            pass
+                    
+                    if row.get('Sale Price') and row['Sale Price'].strip():
+                        try:
+                            item.sale_price = Decimal(row['Sale Price'])
+                        except:
+                            pass
+                    
+                    if row.get('Sale Fees') and row['Sale Fees'].strip():
+                        try:
+                            item.sale_fees = Decimal(row['Sale Fees'])
+                        except:
+                            pass
+                    
+                    if row.get('Shipping Cost') and row['Shipping Cost'].strip():
+                        try:
+                            item.shipping_cost = Decimal(row['Shipping Cost'])
+                        except:
+                            pass
+                    
+                    # Handle status
+                    if row.get('Status') and row['Status'].strip():
+                        try:
+                            item.status = ItemStatus(row['Status'].lower())
+                        except ValueError:
+                            pass
+                    
+                    # Handle dates
+                    if row.get('List Date') and row['List Date'].strip():
+                        try:
+                            from datetime import datetime
+                            item.list_date = datetime.strptime(row['List Date'], '%Y-%m-%d').date()
+                        except:
+                            pass
+                    
+                    if row.get('Sale Date') and row['Sale Date'].strip():
+                        try:
+                            from datetime import datetime
+                            item.sale_date = datetime.strptime(row['Sale Date'], '%Y-%m-%d').date()
+                        except:
+                            pass
+                    
+                    if row.get('List Channel'):
+                        item.list_channel = row['List Channel'].strip()
+                    
+                    # Set auction (use first auction if not specified and it's a new item)
+                    if not item.auction_id:
+                        first_auction = Auction.query.first()
+                        if first_auction:
+                            item.auction_id = first_auction.id
+                    
+                    db.session.add(item)
+                
+                db.session.commit()
+                flash(f'Successfully imported {created_count} new items and updated {updated_count} existing items', 'success')
+                return redirect(url_for('items.inventory'))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error importing CSV: {str(e)}', 'error')
+        else:
+            flash('Please upload a CSV file', 'error')
+    
+    return render_template('items/import_inventory.html')
+
 @items_bp.route('/sold')
 @require_login
 def sold():

@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initCashFlowChart() {
-    const transactions = {{ cashflow_data.transactions | tojsonfilter }};
+    const transactions = {{ cashflow_data.transactions | tojson }};
     
     // Group transactions by date
     const dailyData = {};

@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initMonthlyTrendsChart() {
-    const monthlyData = {{ analysis_data.monthly_trends | tojsonfilter }};
+    const monthlyData = {{ analysis_data.monthly_trends | tojson }};
     
     const ctx = document.getElementById('monthlyTrendsChart').getContext('2d');
     new Chart(ctx, {
@@ -362,7 +362,7 @@ function initMonthlyTrendsChart() {
 
 function initROIDistributionChart() {
     // Calculate ROI distribution
-    const topPerformers = {{ analysis_data.top_performers | tojsonfilter }};
+    const topPerformers = {{ analysis_data.top_performers | tojson }};
     
     const roiRanges = {
         'Negative': 0,

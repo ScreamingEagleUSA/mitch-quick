@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Sold Items - Mitch Quick{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-check-circle me-2"></i>Sold Items
+            </h1>
+            <p class="text-muted">Items you've successfully sold</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('items.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Item
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-shopping-cart fa-2x text-success mb-2"></i>
+                    <h5 class="card-title">{{ items|length }}</h5>
+                    <p class="card-text text-muted">Items Sold</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                    <h5 class="card-title">${{ "%.2f"|format(items|sum(attribute='sale_price')|float) }}</h5>
+                    <p class="card-text text-muted">Total Revenue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-coins fa-2x text-primary mb-2"></i>
+                    <h5 class="card-title">${{ "%.2f"|format(items|sum(attribute='purchase_price')|float) }}</h5>
+                    <p class="card-text text-muted">Total Cost</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                    {% set total_profit = (items|sum(attribute='sale_price')|float) - (items|sum(attribute='purchase_price')|float) - (items|sum(attribute='refurb_cost')|float) - (items|sum(attribute='sale_fees')|float) - (items|sum(attribute='shipping_cost')|float) %}
+                    <h5 class="card-title {% if total_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                        ${{ "%.2f"|format(total_profit) }}
+                    </h5>
+                    <p class="card-text text-muted">Net Profit</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>Sold Items
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Sale Date</th>
+                                <th>Sale Price</th>
+                                <th>Total Cost</th>
+                                <th>Net Profit</th>
+                                <th>ROI</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <h6 class="mb-1">{{ item.title }}</h6>
+                                        <small class="text-muted">
+                                            {% if item.lot_number %}Lot {{ item.lot_number }} • {% endif %}
+                                            {{ item.auction.title if item.auction else 'No auction' }}
+                                            {% if item.list_channel %} • {{ item.list_channel }}{% endif %}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.sale_date %}
+                                        {{ item.sale_date.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        ${{ "%.2f"|format(item.sale_price) if item.sale_price else 'N/A' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% set total_cost = (item.purchase_price or 0) + (item.refurb_cost or 0) + (item.sale_fees or 0) + (item.shipping_cost or 0) %}
+                                    <span class="badge bg-secondary">
+                                        ${{ "%.2f"|format(total_cost) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if item.sale_price %}
+                                        {% set net_profit = item.sale_price - total_cost %}
+                                        <span class="badge {% if net_profit > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                            ${{ "%.2f"|format(net_profit) }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.sale_price and item.purchase_price %}
+                                        {% set roi = ((item.sale_price - total_cost) / (item.purchase_price + (item.refurb_cost or 0))) * 100 %}
+                                        <span class="badge {% if roi > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ "%.1f"|format(roi) }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('items.edit', item_id=item.id) }}" 
+                                           class="btn btn-sm btn-outline-primary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('items.view', item_id=item.id) }}" 
+                                           class="btn btn-sm btn-outline-secondary" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                    <h5>No Sold Items Yet</h5>
+                    <p class="text-muted">You haven't sold any items yet. Keep working on your inventory!</p>
+                    <a href="{{ url_for('items.inventory') }}" class="btn btn-primary">
+                        <i class="fas fa-warehouse me-2"></i>View Inventory
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
