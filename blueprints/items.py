@@ -41,6 +41,57 @@ def index():
                          status_filter=status_filter,
                          auction_filter=auction_filter)
 
+@items_bp.route('/bulk-action', methods=['POST'])
+@require_login
+def bulk_action():
+    """Handle bulk actions on items"""
+    action = request.form.get('action')
+    selected_items = request.form.getlist('selected_items')
+    
+    if not selected_items:
+        flash('No items selected.', 'warning')
+        return redirect(url_for('items.index'))
+    
+    if action == 'delete':
+        try:
+            deleted_count = 0
+            for item_id in selected_items:
+                item = Item.query.get(int(item_id))
+                if item:
+                    # Delete partnerships first
+                    ItemPartner.query.filter_by(item_id=item.id).delete()
+                    db.session.delete(item)
+                    deleted_count += 1
+            
+            db.session.commit()
+            flash(f'Successfully deleted {deleted_count} items.', 'success')
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error deleting items: {str(e)}', 'danger')
+    
+    elif action == 'status_change':
+        new_status = request.form.get('new_status')
+        if new_status and new_status in [status.value for status in ItemStatus]:
+            try:
+                updated_count = 0
+                for item_id in selected_items:
+                    item = Item.query.get(int(item_id))
+                    if item:
+                        item.status = ItemStatus(new_status)
+                        updated_count += 1
+                
+                db.session.commit()
+                flash(f'Successfully updated {updated_count} items to {new_status}.', 'success')
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error updating items: {str(e)}', 'danger')
+        else:
+            flash('Invalid status selected.', 'danger')
+    
+    return redirect(url_for('items.index'))
+
 @items_bp.route('/create', methods=['GET', 'POST'])
 @require_login
 def create():
