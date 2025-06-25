@@ -13,9 +13,7 @@ def index():
     page = request.args.get('page', 1, type=int)
     per_page = 20
     
-    auctions = Auction.query.order_by(Auction.date.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
+    auctions = Auction.query.order_by(Auction.date.desc()).all()
     
     return render_template('auctions/index.html', auctions=auctions)
 

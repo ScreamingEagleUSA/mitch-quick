@@ -158,36 +158,53 @@ def manage_partners(item_id):
     item = Item.query.get_or_404(item_id)
     
     if request.method == 'POST':
-        # Clear existing partnerships
-        ItemPartner.query.filter_by(item_id=item_id).delete()
+        action = request.form.get('action')
         
-        # Add new partnerships
-        partner_ids = request.form.getlist('partner_id')
-        partner_shares = request.form.getlist('partner_share')
+        if action == 'add_partner':
+            # Handle adding partner share
+            partner_id = request.form.get('partner_id')
+            pct_share = request.form.get('pct_share')
+            
+            if partner_id and pct_share:
+                try:
+                    # Check if partnership already exists
+                    existing = ItemPartner.query.filter_by(
+                        item_id=item_id,
+                        partner_id=int(partner_id)
+                    ).first()
+                    
+                    if existing:
+                        existing.pct_share = float(pct_share)
+                        flash('Partner share updated successfully!', 'success')
+                    else:
+                        partnership = ItemPartner(
+                            item_id=item_id,
+                            partner_id=int(partner_id),
+                            pct_share=float(pct_share)
+                        )
+                        db.session.add(partnership)
+                        flash('Partner added successfully!', 'success')
+                    
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    flash('Error updating partner share. Please try again.', 'danger')
         
-        total_share = 0
-        for partner_id, share in zip(partner_ids, partner_shares):
-            if partner_id and share:
-                partnership = ItemPartner(
-                    item_id=item_id,
-                    partner_id=int(partner_id),
-                    pct_share=float(share)
-                )
-                db.session.add(partnership)
-                total_share += float(share)
+        elif action == 'remove_partner':
+            # Handle removing partner
+            partnership_id = request.form.get('partnership_id')
+            if partnership_id:
+                try:
+                    partnership = ItemPartner.query.get(int(partnership_id))
+                    if partnership:
+                        db.session.delete(partnership)
+                        db.session.commit()
+                        flash('Partner removed successfully!', 'success')
+                except Exception as e:
+                    db.session.rollback()
+                    flash('Error removing partner. Please try again.', 'danger')
         
-        # Validate total share
-        if total_share > 100:
-            flash('Total partner shares cannot exceed 100%.', 'danger')
-            db.session.rollback()
-        else:
-            try:
-                db.session.commit()
-                flash('Partners updated successfully!', 'success')
-                return redirect(url_for('items.index'))
-            except Exception as e:
-                db.session.rollback()
-                flash('Error updating partners. Please try again.', 'danger')
+        return redirect(url_for('items.manage_partners', item_id=item_id))
     
     # Get all partners and existing partnerships
     partners = Partner.query.all()
