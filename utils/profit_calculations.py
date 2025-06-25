@@ -219,9 +219,14 @@ def calculate_portfolio_metrics(items) -> Dict[str, Any]:
         elif item.status == ItemStatus.WATCH:
             metrics['items_watchlist'] += 1
         
-        # Calculate investments
+        # Calculate investments (including itemized expenses)
         if item.purchase_price:
             investment = float(item.purchase_price) + (float(item.refurb_cost) if item.refurb_cost else 0)
+            # Add itemized expenses
+            if hasattr(item, 'total_expenses') and callable(item.total_expenses):
+                expenses = item.total_expenses()
+                if expenses:
+                    investment += float(expenses)
             metrics['total_invested'] += investment
         
         # Calculate profits for sold items
