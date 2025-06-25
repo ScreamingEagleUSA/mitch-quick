@@ -276,6 +276,7 @@ def import_pdf():
             import tempfile
             import json
             import os
+
             
             # Create temp file for lots data
             temp_fd, temp_path = tempfile.mkstemp(suffix='.json', prefix='import_')
