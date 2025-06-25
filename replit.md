@@ -130,6 +130,7 @@ Mitch Quick is a comprehensive web application for managing auction flipping bus
 
 ## Recent Changes
 
+- June 25, 2025: **CSV IMPORT ENHANCEMENT** - Added flexible date parsing (DD/MM/YY format like 6/30/25) and automatic item creation on import
 - June 25, 2025: **FINAL SYSTEM COMPLETION** - All issues resolved, piece sales fully functional with edit capability
 - June 25, 2025: Added missing edit_piece_sale route and template for complete CRUD operations on piece sales
 - June 25, 2025: Fixed inventory dashboard stats to include refurb costs and expenses in total value calculations
