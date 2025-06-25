@@ -289,6 +289,79 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Piece Sales History (for multiple pieces items) -->
+            {% if item.multiple_pieces %}
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-coins me-2"></i>Piece Sales History
+                    </h5>
+                    {% if item.pieces_remaining and item.pieces_remaining > 0 %}
+                    <a href="{{ url_for('items.sell_pieces', item_id=item.id) }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-1"></i>Record Sale
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if item.piece_sales %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Pieces Sold</th>
+                                        <th>Price per Piece</th>
+                                        <th>Total Amount</th>
+                                        <th>Buyer</th>
+                                        <th>Channel</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sale in item.piece_sales %}
+                                    <tr>
+                                        <td>{{ sale.sale_date.strftime('%Y-%m-%d') if sale.sale_date else 'N/A' }}</td>
+                                        <td>{{ sale.pieces_sold }}</td>
+                                        <td>${{ "%.2f"|format(sale.sale_price_per_piece) }}</td>
+                                        <td>${{ "%.2f"|format(sale.total_sale_amount) }}</td>
+                                        <td>{{ sale.buyer_info or 'N/A' }}</td>
+                                        <td>{{ sale.sale_channel or 'N/A' }}</td>
+                                        <td>
+                                            <a href="{{ url_for('items.edit_piece_sale', sale_id=sale.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Total Pieces Sold:</strong> {{ item.pieces_sold or 0 }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Total Revenue from Pieces:</strong> ${{ "%.2f"|format(item.total_piece_sales_revenue or 0) }}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-coins fa-2x mb-2"></i>
+                            <p>No piece sales recorded yet.</p>
+                            {% if item.pieces_remaining and item.pieces_remaining > 0 %}
+                            <a href="{{ url_for('items.sell_pieces', item_id=item.id) }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Record First Sale
+                            </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
