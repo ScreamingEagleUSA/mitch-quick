@@ -42,7 +42,8 @@
             <div class="card">
                 <div class="card-body text-center">
                     <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
-                    <h5 class="card-title">${{ "%.2f"|format(items|sum(attribute='purchase_price')|float) }}</h5>
+                    {% set total_purchase = items|selectattr('purchase_price', 'defined')|sum(attribute='purchase_price') %}
+                    <h5 class="card-title">${{ "%.2f"|format(total_purchase|float) }}</h5>
                     <p class="card-text text-muted">Total Invested</p>
                 </div>
             </div>
@@ -60,7 +61,8 @@
             <div class="card">
                 <div class="card-body text-center">
                     <i class="fas fa-target fa-2x text-info mb-2"></i>
-                    <h5 class="card-title">${{ "%.2f"|format(items|sum(attribute='target_resale_price')|float) }}</h5>
+                    {% set total_target = items|selectattr('target_resale_price', 'defined')|sum(attribute='target_resale_price') %}
+                    <h5 class="card-title">${{ "%.2f"|format(total_target|float) }}</h5>
                     <p class="card-text text-muted">Target Value</p>
                 </div>
             </div>
