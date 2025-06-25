@@ -287,3 +287,159 @@ def manage_partners(item_id):
         flash(f'Error loading partner management: {str(e)}', 'danger')
         return redirect(url_for('items.edit', item_id=item_id))
 
+@items_bp.route('/watchlist')
+@require_login
+def watchlist():
+    """Show watchlist items"""
+    items = Item.query.filter_by(status=ItemStatus.WATCH).order_by(Item.updated_at.desc()).all()
+    auctions = Auction.query.order_by(Auction.date.desc()).all()
+    
+    return render_template('items/watchlist.html', items=items, auctions=auctions)
+
+@items_bp.route('/inventory')
+@require_login
+def inventory():
+    """Show inventory (won items)"""
+    items = Item.query.filter_by(status=ItemStatus.WON).order_by(Item.updated_at.desc()).all()
+    
+    return render_template('items/inventory.html', items=items)
+
+@items_bp.route('/sold')
+@require_login
+def sold():
+    """Show sold items"""
+    items = Item.query.filter_by(status=ItemStatus.SOLD).order_by(Item.sale_date.desc(), Item.updated_at.desc()).all()
+    
+    return render_template('items/sold.html', items=items)
+
+@items_bp.route('/export-inventory')
+@require_login
+def export_inventory():
+    """Export inventory as CSV"""
+    import csv
+    import io
+    from flask import make_response
+    
+    # Get all items 
+    items = Item.query.order_by(Item.updated_at.desc()).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        'ID', 'Title', 'Lot Number', 'Auction', 'Status', 'Purchase Price', 
+        'Refurb Cost', 'Target Resale', 'Sale Price', 'Sale Date', 'Net Profit', 'ROI %'
+    ])
+    
+    # Write data
+    for item in items:
+        writer.writerow([
+            item.id,
+            item.title,
+            item.lot_number or '',
+            item.auction.title if item.auction else '',
+            item.status.value,
+            float(item.purchase_price) if item.purchase_price else '',
+            float(item.refurb_cost) if item.refurb_cost else '',
+            float(item.target_resale_price) if item.target_resale_price else '',
+            float(item.sale_price) if item.sale_price else '',
+            item.sale_date.strftime('%Y-%m-%d') if item.sale_date else '',
+            item.net_profit if item.net_profit else '',
+            round(item.roi_percentage, 2) if item.roi_percentage else ''
+        ])
+    
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = 'attachment; filename=inventory.csv'
+    
+    return response
+
+@items_bp.route('/import-inventory', methods=['GET', 'POST'])
+@require_login
+def import_inventory():
+    """Import/update inventory from CSV"""
+    if request.method == 'POST':
+        if 'csv_file' not in request.files:
+            flash('No CSV file selected.', 'danger')
+            return redirect(request.url)
+        
+        file = request.files['csv_file']
+        if file.filename == '':
+            flash('No CSV file selected.', 'danger')
+            return redirect(request.url)
+        
+        if not file.filename.lower().endswith('.csv'):
+            flash('Please upload a CSV file.', 'danger')
+            return redirect(request.url)
+        
+        try:
+            import csv
+            import io
+            from datetime import datetime
+            
+            # Read CSV content
+            stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+            csv_input = csv.DictReader(stream)
+            
+            updated_count = 0
+            
+            for row in csv_input:
+                item_id = row.get('ID', '').strip()
+                
+                if item_id:
+                    # Update existing item
+                    item = Item.query.get(int(item_id))
+                    if item:
+                        if row.get('Purchase Price'):
+                            item.purchase_price = float(row['Purchase Price'])
+                        if row.get('Refurb Cost'):
+                            item.refurb_cost = float(row['Refurb Cost'])
+                        if row.get('Sale Price'):
+                            item.sale_price = float(row['Sale Price'])
+                        if row.get('Sale Date'):
+                            item.sale_date = datetime.strptime(row['Sale Date'], '%Y-%m-%d').date()
+                        
+                        item.updated_at = datetime.utcnow()
+                        updated_count += 1
+                
+            db.session.commit()
+            
+            flash(f'Successfully updated {updated_count} items from CSV.', 'success')
+            return redirect(url_for('items.index'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error processing CSV: {str(e)}', 'danger')
+            return redirect(request.url)
+    
+    return render_template('items/import_inventory.html')
+
+@items_bp.route('/<int:item_id>/update-price', methods=['POST'])
+@require_login
+def update_price_suggestion(item_id):
+    """Update eBay price suggestion for item"""
+    item = Item.query.get_or_404(item_id)
+    
+    try:
+        success = ebay_api.update_item_price_suggestion(item)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'suggested_price': float(item.ebay_suggested_price) if item.ebay_suggested_price else None,
+                'updated_at': item.ebay_price_updated.strftime('%Y-%m-%d %H:%M') if item.ebay_price_updated else None
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Could not fetch price suggestion'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@items_bp.route('/<int:item_id>/view')
+@require_login
+def view(item_id):
+    """View item details"""
+    item = Item.query.get_or_404(item_id)
+    return render_template('items/view.html', item=item)
+
