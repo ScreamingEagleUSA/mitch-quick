@@ -100,6 +100,26 @@
                         <dt class="col-sm-3">Shipping Cost:</dt>
                         <dd class="col-sm-9">${{ "%.2f"|format(item.shipping_cost) }}</dd>
                         {% endif %}
+                        
+                        {% if item.multiple_pieces %}
+                        <dt class="col-sm-3">Multiple Pieces:</dt>
+                        <dd class="col-sm-9">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Total:</strong> {{ item.pieces_total }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Sold:</strong> {{ item.pieces_sold or 0 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Remaining:</strong> {{ item.pieces_remaining or 0 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Cost/Piece:</strong> ${{ "%.2f"|format(item.cost_per_piece) if item.cost_per_piece else '0.00' }}
+                                </div>
+                            </div>
+                        </dd>
+                        {% endif %}
                     </dl>
                 </div>
             </div>

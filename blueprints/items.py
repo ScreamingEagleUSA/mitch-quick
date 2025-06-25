@@ -3,7 +3,7 @@ from replit_auth import require_login
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
-from models import Item, Auction, Partner, ItemPartner, ItemStatus
+from models import Item, Auction, Partner, ItemPartner, ItemStatus, ItemExpense, ItemSale
 from utils.ebay_api import ebay_api
 from app import db
 
@@ -118,6 +118,11 @@ def create():
                 list_channel=request.form.get('list_channel') or None,
                 sale_price=float(request.form.get('sale_price')) if request.form.get('sale_price') else None,
                 sale_fees=float(request.form.get('sale_fees')) if request.form.get('sale_fees') else None,
+                shipping_cost=float(request.form.get('shipping_cost')) if request.form.get('shipping_cost') else None,
+                
+                # Multiple pieces functionality
+                multiple_pieces=request.form.get('multiple_pieces') == 'on',
+                pieces_total=int(request.form.get('pieces_total')) if request.form.get('pieces_total') else None
                 shipping_cost=float(request.form.get('shipping_cost')) if request.form.get('shipping_cost') else None
             )
             
@@ -173,6 +178,29 @@ def edit(item_id):
         if list_date_str:
             item.list_date = datetime.strptime(list_date_str, '%Y-%m-%d').date()
         item.list_channel = request.form.get('list_channel')
+        
+        # Sale details  
+        sale_date_str = request.form.get('sale_date')
+        item.sale_date = datetime.strptime(sale_date_str, '%Y-%m-%d').date() if sale_date_str else None
+        item.sale_price = float(request.form.get('sale_price')) if request.form.get('sale_price') else None
+        item.sale_fees = float(request.form.get('sale_fees')) if request.form.get('sale_fees') else 0
+        item.shipping_cost = float(request.form.get('shipping_cost')) if request.form.get('shipping_cost') else 0
+        
+        # Handle multiple pieces functionality
+        multiple_pieces = request.form.get('multiple_pieces') == 'on'
+        pieces_total = request.form.get('pieces_total')
+        
+        item.multiple_pieces = multiple_pieces
+        if multiple_pieces and pieces_total:
+            pieces_total_int = int(pieces_total)
+            item.pieces_total = pieces_total_int
+            # Only set pieces_remaining if it's not already set
+            if item.pieces_remaining is None:
+                item.pieces_remaining = pieces_total_int
+        elif not multiple_pieces:
+            item.multiple_pieces = False
+            item.pieces_total = None
+            item.pieces_remaining = None
         
         # Sale details
         sale_date_str = request.form.get('sale_date')
