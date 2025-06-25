@@ -107,7 +107,11 @@
                             <tr>
                                 <td>
                                     <div>
-                                        <h6 class="mb-1">{{ item.title }}</h6>
+                                        <h6 class="mb-1">
+                                            <a href="{{ url_for('items.view', item_id=item.id) }}" class="text-decoration-none">
+                                                {{ item.title }}
+                                            </a>
+                                        </h6>
                                         <small class="text-muted">{{ item.auction.title if item.auction else 'No auction' }}</small>
                                     </div>
                                 </td>

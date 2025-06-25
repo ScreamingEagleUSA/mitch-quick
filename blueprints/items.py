@@ -529,3 +529,69 @@ def sell_pieces(item_id):
     
     return render_template('items/sell_pieces.html', item=item, datetime=datetime)
 
+@items_bp.route('/edit-piece-sale/<int:sale_id>', methods=['GET', 'POST'])
+@require_login
+def edit_piece_sale(sale_id):
+    """Edit an existing piece sale"""
+    sale = ItemSale.query.get_or_404(sale_id)
+    item = sale.item
+    
+    if request.method == 'POST':
+        try:
+            # Get form data
+            pieces_sold = int(request.form.get('pieces_sold', 0))
+            sale_price_per_piece = float(request.form.get('sale_price_per_piece', 0))
+            sale_date_str = request.form.get('sale_date')
+            buyer_info = request.form.get('buyer_info', '').strip()
+            sale_channel = request.form.get('sale_channel', '').strip()
+            notes = request.form.get('notes', '').strip()
+            
+            # Validation
+            if pieces_sold <= 0:
+                flash('Pieces sold must be greater than 0.', 'danger')
+                return redirect(request.url)
+            if sale_price_per_piece <= 0:
+                flash('Sale price per piece must be greater than 0.', 'danger')
+                return redirect(request.url)
+            
+            # Calculate the difference in pieces sold to adjust remaining pieces
+            pieces_difference = pieces_sold - sale.pieces_sold
+            
+            # Check if we have enough remaining pieces (including the current sale)
+            available_pieces = item.pieces_remaining + sale.pieces_sold
+            if pieces_sold > available_pieces:
+                flash(f'Not enough pieces available. Only {available_pieces} pieces available.', 'danger')
+                return redirect(request.url)
+            
+            # Update the sale record
+            sale.pieces_sold = pieces_sold
+            sale.sale_price_per_piece = sale_price_per_piece
+            sale.total_sale_amount = pieces_sold * sale_price_per_piece
+            sale.sale_date = datetime.strptime(sale_date_str, '%Y-%m-%d').date() if sale_date_str else sale.sale_date
+            sale.buyer_info = buyer_info
+            sale.sale_channel = sale_channel
+            sale.notes = notes
+            
+            # Update remaining pieces
+            item.pieces_remaining = item.pieces_remaining - pieces_difference
+            
+            # Update item status if needed
+            if item.pieces_remaining == 0:
+                item.status = ItemStatus.SOLD
+            elif item.pieces_remaining > 0 and item.status == ItemStatus.SOLD:
+                item.status = ItemStatus.WON  # Change back to won if pieces become available
+            
+            db.session.commit()
+            
+            flash(f'Successfully updated piece sale: {pieces_sold} pieces for ${sale_price_per_piece:.2f} each.', 'success')
+            return redirect(url_for('items.view', item_id=item.id))
+            
+        except ValueError as e:
+            flash('Please enter valid numbers for pieces and price.', 'danger')
+            return redirect(request.url)
+        except Exception as e:
+            flash(f'Error updating sale: {str(e)}', 'danger')
+            return redirect(request.url)
+    
+    return render_template('items/edit_piece_sale.html', item=item, sale=sale, datetime=datetime)
+
