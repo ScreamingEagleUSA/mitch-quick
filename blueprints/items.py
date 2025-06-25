@@ -325,7 +325,30 @@ def inventory():
     """Show inventory (won items)"""
     items = Item.query.filter_by(status=ItemStatus.WON).order_by(Item.updated_at.desc()).all()
     
-    return render_template('items/inventory.html', items=items)
+    # Calculate totals for summary cards
+    total_invested = 0
+    total_target = 0
+    
+    for item in items:
+        # Calculate total cost including expenses
+        item_cost = float(item.purchase_price or 0) + float(item.refurb_cost or 0)
+        if hasattr(item, 'total_expenses') and callable(item.total_expenses):
+            expenses = item.total_expenses()
+            if expenses:
+                item_cost += float(expenses)
+        total_invested += item_cost
+        
+        # Add target resale price
+        if item.target_resale_price:
+            total_target += float(item.target_resale_price)
+    
+    estimated_profit = total_target - total_invested
+    
+    return render_template('items/inventory.html', 
+                         items=items,
+                         total_invested=total_invested,
+                         total_target=total_target,
+                         estimated_profit=estimated_profit)
 
 @items_bp.route('/sold')
 def sold():

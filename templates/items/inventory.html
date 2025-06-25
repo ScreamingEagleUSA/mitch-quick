@@ -51,12 +51,6 @@
             <div class="card">
                 <div class="card-body text-center">
                     <i class="fas fa-target fa-2x text-info mb-2"></i>
-                    {% set total_target = 0 %}
-                    {% for item in items %}
-                        {% if item.target_resale_price %}
-                            {% set total_target = total_target + item.target_resale_price %}
-                        {% endif %}
-                    {% endfor %}
                     <h5 class="card-title">${{ "%.2f"|format(total_target or 0) }}</h5>
                     <p class="card-text text-muted">Target Value</p>
                 </div>
@@ -66,7 +60,6 @@
             <div class="card">
                 <div class="card-body text-center">
                     <i class="fas fa-chart-line fa-2x text-warning mb-2"></i>
-                    {% set estimated_profit = total_target - total_purchase %}
                     <h5 class="card-title {% if estimated_profit >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "%.2f"|format(estimated_profit) }}</h5>
                     <p class="card-text text-muted">Est. Profit</p>
                 </div>
