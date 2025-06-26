@@ -40,7 +40,7 @@ try:
     with app.app_context():
         import models  # noqa: F401
         db.create_all()
-        logging.info("Database tables created")
+        logging.info("Database tables created successfully")
 except Exception as e:
     logging.warning(f"Could not create database tables during startup: {e}")
     logging.info("Tables may already exist or database may be temporarily unavailable")
@@ -52,7 +52,7 @@ def make_session_permanent():
 
 # Import and register blueprints
 try:
-    from supabase_auth import auth_bp
+    from blueprints.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix="/auth")
     print("Auth blueprint registered successfully")
 except Exception as e:

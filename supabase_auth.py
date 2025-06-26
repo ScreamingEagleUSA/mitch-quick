@@ -16,6 +16,7 @@ supabase_key = os.environ.get("SUPABASE_ANON_KEY")
 # Only create Supabase client if credentials are available
 if supabase_url and supabase_key:
     try:
+        # Remove any proxy configuration that might cause issues
         supabase: Client = create_client(supabase_url, supabase_key)
     except Exception as e:
         print(f"Warning: Could not initialize Supabase client: {e}")
