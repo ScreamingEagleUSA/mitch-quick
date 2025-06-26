@@ -9,30 +9,13 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 import random
 
-def create_demo_user():
-    """Create a demo user for testing"""
-    user = User()
-    user.id = 'demo-user-123'
-    user.email = 'demo@example.com'
-    user.first_name = 'Demo'
-    user.last_name = 'User'
-    user.profile_image_url = None
-    
-    existing = User.query.filter_by(id=user.id).first()
-    if existing:
-        return existing
-    
-    db.session.add(user)
-    db.session.commit()
-    return user
-
 def create_demo_data():
     """Create demo auction data"""
     with app.app_context():
         print("Creating demo data...")
         
-        # Create demo user
-        user = create_demo_user()
+        # Note: Users are now created through Supabase authentication
+        # No need to create demo user manually
         
         # Create auctions
         auction1 = Auction()
@@ -199,32 +182,14 @@ def create_demo_data():
         expense2.item_id = items[3].id  # drill press
         expense2.description = 'Restoration supplies'
         expense2.amount = Decimal('45.00')
-        expense2.date = date.today() - timedelta(days=18)
+        expense2.date = date.today() - timedelta(days=15)
         expense2.category = 'repair'
         
         db.session.add(expense1)
         db.session.add(expense2)
         
-        # Add partner relationships
-        partnership1 = ItemPartner()
-        partnership1.item_id = items[4].id  # welding equipment
-        partnership1.partner_id = partner1.id
-        partnership1.pct_share = Decimal('30.00')
-        
-        partnership2 = ItemPartner()
-        partnership2.item_id = items[5].id  # router
-        partnership2.partner_id = partner2.id
-        partnership2.pct_share = Decimal('25.00')
-        
-        db.session.add(partnership1)
-        db.session.add(partnership2)
-        
         db.session.commit()
-        
         print("Demo data created successfully!")
-        print(f"Created {len(items)} items across {len([auction1, auction2])} auctions")
-        print(f"Created {len([partner1, partner2])} partners")
-        print("You can now test the application with realistic data")
 
 if __name__ == '__main__':
     create_demo_data()

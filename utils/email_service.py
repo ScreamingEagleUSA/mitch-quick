@@ -15,7 +15,15 @@ import io
 logger = logging.getLogger(__name__)
 
 class EmailService:
-    """Email service for sending cash flow reports and notifications"""
+    """
+    Email service for sending cash flow reports and notifications
+    
+    Note: Scheduled email reports (previously handled by Replit cron) 
+    are not available on Render's free tier. For production use, consider:
+    - Upgrading to Render's paid tier with cron jobs
+    - Using external services like cron-job.org
+    - Implementing manual report triggers
+    """
     
     def __init__(self):
         self.smtp_server = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')

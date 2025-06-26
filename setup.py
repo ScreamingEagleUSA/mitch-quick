@@ -79,6 +79,10 @@ def main():
             db.create_all()
             print("✅ Database tables created successfully!")
             
+            # Note: Users are now created through Supabase authentication
+            print("ℹ️  User accounts are managed through Supabase authentication")
+            print("   No need to create admin users manually")
+            
             # Ask if user wants sample data
             response = input("\nWould you like to create sample data? (y/n): ").lower().strip()
             if response in ['y', 'yes']:
@@ -88,7 +92,7 @@ def main():
             print("\nNext steps:")
             print("1. Start the application: python main.py")
             print("2. Visit http://localhost:5000")
-            print("3. Sign in with your preferred method")
+            print("3. Sign up/in with your email through Supabase")
             
         except Exception as e:
             print(f"❌ Error during setup: {e}")

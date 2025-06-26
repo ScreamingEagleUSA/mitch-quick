@@ -74,17 +74,46 @@ def create_or_update_user(user_data):
             # If database fails, create a temporary user object
             from flask_login import UserMixin
             class TempUser(UserMixin):
-                def __init__(self, user_id, email):
-                    self.id = user_id
-                    self.email = email
-                    self.is_authenticated = True
-                    self.is_active = True
-                    self.is_anonymous = False
-                    self.first_name = user_data.get('user_metadata', {}).get('first_name', '')
-                    self.last_name = user_data.get('user_metadata', {}).get('last_name', '')
-                    self.profile_image_url = user_data.get('user_metadata', {}).get('avatar_url', '')
+                def __init__(self, user_id, email, user_data):
+                    self._id = user_id
+                    self._email = email
+                    self._first_name = user_data.get('user_metadata', {}).get('first_name', '')
+                    self._last_name = user_data.get('user_metadata', {}).get('last_name', '')
+                    self._profile_image_url = user_data.get('user_metadata', {}).get('avatar_url', '')
+                
+                @property
+                def id(self):
+                    return self._id
+                
+                @property
+                def email(self):
+                    return self._email
+                
+                @property
+                def first_name(self):
+                    return self._first_name
+                
+                @property
+                def last_name(self):
+                    return self._last_name
+                
+                @property
+                def profile_image_url(self):
+                    return self._profile_image_url
+                
+                @property
+                def is_authenticated(self):
+                    return True
+                
+                @property
+                def is_active(self):
+                    return True
+                
+                @property
+                def is_anonymous(self):
+                    return False
             
-            return TempUser(user_id, email)
+            return TempUser(user_id, email, user_data)
             
     except Exception as e:
         print(f"Error creating/updating user: {e}")

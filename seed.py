@@ -1,7 +1,6 @@
 from datetime import datetime, date
 from app import app, db
 from models import User, Auction, Item, Partner, ItemPartner, ItemStatus
-from werkzeug.security import generate_password_hash
 
 def seed_database():
     """Seed the database with sample data"""
@@ -9,14 +8,8 @@ def seed_database():
         # Create tables
         db.create_all()
         
-        # Create admin user
-        if not User.query.filter_by(username='admin').first():
-            admin = User(
-                username='admin',
-                email='admin@mitchquick.com'
-            )
-            admin.set_password('admin123')
-            db.session.add(admin)
+        # Note: Users are now created through Supabase authentication
+        # No need to create admin user manually
         
         # Create sample partners
         if not Partner.query.first():
