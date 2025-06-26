@@ -50,6 +50,29 @@ except Exception as e:
 def make_session_permanent():
     session.permanent = True
 
+# Debug route to check environment
+@app.route('/debug')
+def debug():
+    """Debug endpoint to check environment variables and database connection"""
+    debug_info = {
+        'supabase_url': bool(os.environ.get('SUPABASE_URL')),
+        'supabase_anon_key': bool(os.environ.get('SUPABASE_ANON_KEY')),
+        'database_url': bool(os.environ.get('DATABASE_URL')),
+        'database_connected': False,
+        'session_data': dict(session),
+        'current_user_authenticated': current_user.is_authenticated if current_user else False
+    }
+    
+    # Test database connection
+    try:
+        with app.app_context():
+            db.session.execute('SELECT 1')
+            debug_info['database_connected'] = True
+    except Exception as e:
+        debug_info['database_error'] = str(e)
+    
+    return debug_info
+
 # Import and register blueprints
 try:
     from blueprints.auth import auth_bp

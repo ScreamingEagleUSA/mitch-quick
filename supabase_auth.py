@@ -16,8 +16,8 @@ supabase_key = os.environ.get("SUPABASE_ANON_KEY")
 # Only create Supabase client if credentials are available
 if supabase_url and supabase_key:
     try:
-        # Remove any proxy configuration that might cause issues
         supabase: Client = create_client(supabase_url, supabase_key)
+        print(f"Supabase client initialized successfully")
     except Exception as e:
         print(f"Warning: Could not initialize Supabase client: {e}")
         supabase = None
@@ -32,19 +32,20 @@ login_manager.login_message = 'Please log in to access this page.'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(user_id)
-
-def get_user_from_supabase(user_id):
-    """Get user from Supabase and sync with local database"""
-    if not supabase:
-        return None
-        
+    """Load user from database"""
     try:
-        # Get user from Supabase
-        response = supabase.auth.admin.get_user_by_id(user_id)
-        user_data = response.user
+        return User.query.get(user_id)
+    except Exception as e:
+        print(f"Error loading user {user_id}: {e}")
+        return None
+
+def create_or_update_user(user_data):
+    """Create or update user in local database"""
+    try:
+        user_id = user_data.get('id')
+        email = user_data.get('email')
         
-        if not user_data:
+        if not user_id or not email:
             return None
             
         # Check if user exists in local database
@@ -53,37 +54,45 @@ def get_user_from_supabase(user_id):
             # Create new user in local database
             user = User()
             user.id = user_id
-            user.email = user_data.email
-            user.first_name = user_data.user_metadata.get('first_name', '')
-            user.last_name = user_data.user_metadata.get('last_name', '')
-            user.profile_image_url = user_data.user_metadata.get('avatar_url', '')
+            user.email = email
+            user.first_name = user_data.get('user_metadata', {}).get('first_name', '')
+            user.last_name = user_data.get('user_metadata', {}).get('last_name', '')
+            user.profile_image_url = user_data.get('user_metadata', {}).get('avatar_url', '')
             db.session.add(user)
-            db.session.commit()
         else:
             # Update existing user
-            user.email = user_data.email
-            user.first_name = user_data.user_metadata.get('first_name', user.first_name)
-            user.last_name = user_data.user_metadata.get('last_name', user.last_name)
-            user.profile_image_url = user_data.user_metadata.get('avatar_url', user.profile_image_url)
-            db.session.commit()
-            
+            user.email = email
+            user.first_name = user_data.get('user_metadata', {}).get('first_name', user.first_name)
+            user.last_name = user_data.get('user_metadata', {}).get('last_name', user.last_name)
+            user.profile_image_url = user_data.get('user_metadata', {}).get('avatar_url', user.profile_image_url)
+        
+        db.session.commit()
         return user
     except Exception as e:
-        print(f"Error getting user from Supabase: {e}")
+        print(f"Error creating/updating user: {e}")
+        db.session.rollback()
         return None
 
 def verify_supabase_token(token):
     """Verify JWT token from Supabase"""
     try:
-        # Decode token without verification first to get user info
+        # Decode token without verification to get user info
         decoded = jwt.decode(token, options={"verify_signature": False})
         user_id = decoded.get('sub')
         
         if not user_id:
+            print("No user ID found in token")
             return None
             
-        # Get user from database
-        user = get_user_from_supabase(user_id)
+        # Extract user data from token
+        user_data = {
+            'id': user_id,
+            'email': decoded.get('email'),
+            'user_metadata': decoded.get('user_metadata', {})
+        }
+        
+        # Create or update user in local database
+        user = create_or_update_user(user_data)
         return user
     except Exception as e:
         print(f"Error verifying token: {e}")
@@ -122,6 +131,36 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.index'))
     return render_template('auth/login.html')
+
+@auth_bp.route('/register')
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard.index'))
+    return render_template('auth/register.html')
+
+@auth_bp.route('/verify-email')
+def verify_email():
+    """Handle email verification"""
+    token = request.args.get('token')
+    type = request.args.get('type')
+    
+    if type == 'signup' and token:
+        try:
+            # Verify the email
+            if supabase:
+                response = supabase.auth.verify_otp({
+                    "token_hash": token,
+                    "type": "signup"
+                })
+                if response.user:
+                    flash('Email verified successfully! You can now sign in.', 'success')
+                    return redirect(url_for('auth.login'))
+        except Exception as e:
+            print(f"Email verification error: {e}")
+            flash('Email verification failed. Please try again.', 'error')
+    
+    flash('Invalid verification link.', 'error')
+    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/login/callback')
 def login_callback():
