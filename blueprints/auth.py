@@ -1,5 +1,5 @@
-# This blueprint is no longer needed as we're using Replit auth
-# The authentication is now handled by replit_auth.py and routes.py
+# This blueprint is no longer needed as we're using Supabase auth
+# The authentication is now handled by supabase_auth.py and routes.py
 from flask import Blueprint, redirect, url_for, render_template, request, session, flash, jsonify
 from flask_login import login_user, logout_user, current_user
 from supabase_auth import verify_supabase_token, get_user_from_supabase

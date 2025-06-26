@@ -7,6 +7,7 @@ from app import db
 expenses_bp = Blueprint('expenses', __name__)
 
 @expenses_bp.route('/')
+@require_login
 def index():
     """List all expenses"""
     page = request.args.get('page', 1, type=int)

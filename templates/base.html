@@ -3,34 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Mitch Quick - Auction Flipping Tracker{% endblock %}</title>
-    
-    <!-- Bootstrap CSS (Replit Dark Theme) -->
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    
-    <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Custom CSS -->
-    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
-    
+    <title>{% block title %}Mitch Quick{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('dashboard.index') }}">
-                <i class="fas fa-gavel me-2"></i>Mitch Quick
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-hammer me-2"></i>Mitch Quick
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -38,16 +23,10 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                {% if current_user.is_authenticated %}
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('dashboard.index') }}">
                             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auctions.index') }}">
-                            <i class="fas fa-calendar-alt me-1"></i>Auctions
                         </a>
                     </li>
                     <li class="nav-item dropdown">
@@ -55,34 +34,49 @@
                             <i class="fas fa-box me-1"></i>Items
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('items.index') }}">
-                                <i class="fas fa-list me-2"></i>All Items
-                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('items.index') }}">All Items</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('items.watchlist') }}">Watchlist</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('items.inventory') }}">Inventory</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('items.sold') }}">Sold</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('items.watchlist') }}">
-                                <i class="fas fa-eye me-2"></i>Watchlist
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('items.inventory') }}">
-                                <i class="fas fa-warehouse me-2"></i>Inventory
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('items.sold') }}">
-                                <i class="fas fa-dollar-sign me-2"></i>Sold Items
-                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('items.create') }}">Add Item</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-gavel me-1"></i>Auctions
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('auctions.index') }}">All Auctions</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('expenses.index') }}">
-                                <i class="fas fa-receipt me-2"></i>Expenses
-                            </a></li>
-
+                            <li><a class="dropdown-item" href="{{ url_for('auctions.create') }}">Add Auction</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-users me-1"></i>Partners
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('partners.index') }}">All Partners</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('partners.earnings_summary') }}">Earnings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('partners.create') }}">Add Partner</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-chart-line me-1"></i>Reports
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('reports.index') }}">Overview</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.cashflow') }}">Cash Flow</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.profit_analysis') }}">Profit Analysis</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.partner_report') }}">Partner Report</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('partners.index') }}">
-                            <i class="fas fa-users me-1"></i>Partners
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('reports.index') }}">
-                            <i class="fas fa-chart-bar me-1"></i>Reports
+                        <a class="nav-link" href="{{ url_for('expenses.index') }}">
+                            <i class="fas fa-receipt me-1"></i>Expenses
                         </a>
                     </li>
                 </ul>
@@ -90,21 +84,19 @@
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            {% if current_user.profile_image_url %}
-                                <img src="{{ current_user.profile_image_url }}" alt="Profile" class="rounded-circle me-2" style="width: 24px; height: 24px; object-fit: cover;">
-                            {% else %}
-                                <i class="fas fa-user-circle me-1"></i>
-                            {% endif %}
-                            {{ current_user.first_name or current_user.email.split('@')[0] if current_user.email else 'User' }}
+                            <i class="fas fa-user me-1"></i>{{ current_user.email if current_user.is_authenticated else 'Guest' }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('replit_auth.logout') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('dashboard.index') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout
                             </a></li>
                         </ul>
                     </li>
                 </ul>
-                {% endif %}
             </div>
         </div>
     </nav>
@@ -124,36 +116,27 @@
     {% endwith %}
 
     <!-- Main Content -->
-    <main class="{% if current_user.is_authenticated %}py-4{% else %}py-5{% endif %}">
+    <main class="py-4">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    {% if current_user.is_authenticated %}
-    <footer class="bg-dark border-top mt-5 py-3">
+    <footer class="bg-dark text-muted py-4 mt-5">
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <small class="text-muted">
-                        © 2024 Mitch Quick - Auction Flipping Tracker
-                    </small>
+                    <p class="mb-0">&copy; 2024 Mitch Quick. All rights reserved.</p>
                 </div>
                 <div class="col-md-6 text-end">
-                    <small class="text-muted">
-                        Last updated: <span id="last-updated">{{ last_updated }}</span>
-                    </small>
+                    <p class="mb-0">Last updated: {{ last_updated }}</p>
                 </div>
             </div>
         </div>
     </footer>
-    {% endif %}
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
