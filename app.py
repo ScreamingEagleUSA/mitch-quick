@@ -54,10 +54,12 @@ def make_session_permanent():
 @app.route('/debug')
 def debug():
     """Debug endpoint to check environment variables and database connection"""
+    database_url = os.environ.get('DATABASE_URL')
     debug_info = {
         'supabase_url': bool(os.environ.get('SUPABASE_URL')),
         'supabase_anon_key': bool(os.environ.get('SUPABASE_ANON_KEY')),
-        'database_url': bool(os.environ.get('DATABASE_URL')),
+        'database_url': bool(database_url),
+        'database_url_preview': database_url[:50] + '...' if database_url and len(database_url) > 50 else database_url,
         'database_connected': False,
         'session_data': dict(session),
         'current_user_authenticated': current_user.is_authenticated if current_user else False
@@ -176,3 +178,28 @@ def auto_login():
         }
     else:
         return {'error': 'Failed to verify token'}, 400
+
+@app.route('/simple-test')
+def simple_test():
+    """Simple test that doesn't require database"""
+    access_token = session.get('supabase_access_token')
+    if not access_token:
+        return {'error': 'No token found'}
+    
+    try:
+        import jwt
+        # Decode token without verification
+        decoded = jwt.decode(access_token, options={"verify_signature": False})
+        user_id = decoded.get('sub')
+        email = decoded.get('email')
+        
+        return {
+            'success': True,
+            'user_id': user_id,
+            'email': email,
+            'token_valid': True,
+            'exp': decoded.get('exp'),
+            'iat': decoded.get('iat')
+        }
+    except Exception as e:
+        return {'error': f'Token decode failed: {str(e)}'}

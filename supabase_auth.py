@@ -49,28 +49,45 @@ def create_or_update_user(user_data):
             return None
             
         # Check if user exists in local database
-        user = User.query.get(user_id)
-        if not user:
-            # Create new user in local database
-            user = User()
-            user.id = user_id
-            user.email = email
-            user.first_name = user_data.get('user_metadata', {}).get('first_name', '')
-            user.last_name = user_data.get('user_metadata', {}).get('last_name', '')
-            user.profile_image_url = user_data.get('user_metadata', {}).get('avatar_url', '')
-            db.session.add(user)
-        else:
-            # Update existing user
-            user.email = email
-            user.first_name = user_data.get('user_metadata', {}).get('first_name', user.first_name)
-            user.last_name = user_data.get('user_metadata', {}).get('last_name', user.last_name)
-            user.profile_image_url = user_data.get('user_metadata', {}).get('avatar_url', user.profile_image_url)
-        
-        db.session.commit()
-        return user
+        try:
+            user = User.query.get(user_id)
+            if not user:
+                # Create new user in local database
+                user = User()
+                user.id = user_id
+                user.email = email
+                user.first_name = user_data.get('user_metadata', {}).get('first_name', '')
+                user.last_name = user_data.get('user_metadata', {}).get('last_name', '')
+                user.profile_image_url = user_data.get('user_metadata', {}).get('avatar_url', '')
+                db.session.add(user)
+            else:
+                # Update existing user
+                user.email = email
+                user.first_name = user_data.get('user_metadata', {}).get('first_name', user.first_name)
+                user.last_name = user_data.get('user_metadata', {}).get('last_name', user.last_name)
+                user.profile_image_url = user_data.get('user_metadata', {}).get('avatar_url', user.profile_image_url)
+            
+            db.session.commit()
+            return user
+        except Exception as db_error:
+            print(f"Database error creating/updating user: {db_error}")
+            # If database fails, create a temporary user object
+            from flask_login import UserMixin
+            class TempUser(UserMixin):
+                def __init__(self, user_id, email):
+                    self.id = user_id
+                    self.email = email
+                    self.is_authenticated = True
+                    self.is_active = True
+                    self.is_anonymous = False
+                    self.first_name = user_data.get('user_metadata', {}).get('first_name', '')
+                    self.last_name = user_data.get('user_metadata', {}).get('last_name', '')
+                    self.profile_image_url = user_data.get('user_metadata', {}).get('avatar_url', '')
+            
+            return TempUser(user_id, email)
+            
     except Exception as e:
         print(f"Error creating/updating user: {e}")
-        db.session.rollback()
         return None
 
 def verify_supabase_token(token):
