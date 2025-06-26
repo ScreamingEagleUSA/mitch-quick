@@ -68,6 +68,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <div id="loginError" class="alert alert-danger d-none" role="alert"></div>
                     <form id="emailForm">
                         <div class="mb-3">
                             <label for="email" class="form-label">Email address</label>
@@ -78,7 +79,10 @@
                             <input type="password" class="form-control" id="password" required>
                         </div>
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Sign In</button>
+                            <button type="submit" class="btn btn-primary" id="loginBtn">
+                                <span class="spinner-border spinner-border-sm d-none me-2" id="loginSpinner"></span>
+                                Sign In
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -105,6 +109,14 @@
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const loginSpinner = document.getElementById('loginSpinner');
+            const loginError = document.getElementById('loginError');
+            
+            // Show loading state
+            loginBtn.disabled = true;
+            loginSpinner.classList.remove('d-none');
+            loginError.classList.add('d-none');
             
             try {
                 const { data, error } = await supabase.auth.signInWithPassword({
@@ -112,14 +124,41 @@
                     password: password
                 });
                 
-                if (error) throw error;
+                if (error) {
+                    // Handle specific error cases
+                    let errorMessage = 'Error signing in. Please try again.';
+                    
+                    if (error.message.includes('Invalid login credentials')) {
+                        errorMessage = 'Invalid email or password. Please check your credentials.';
+                    } else if (error.message.includes('Email not confirmed')) {
+                        errorMessage = 'Please verify your email address before signing in. Check your inbox for a verification link.';
+                    } else if (error.message.includes('Too many requests')) {
+                        errorMessage = 'Too many login attempts. Please wait a moment before trying again.';
+                    } else {
+                        errorMessage = error.message;
+                    }
+                    
+                    loginError.textContent = errorMessage;
+                    loginError.classList.remove('d-none');
+                    return;
+                }
                 
-                // Redirect to callback
-                window.location.href = '/auth/login/callback?access_token=' + data.session.access_token + '&refresh_token=' + data.session.refresh_token;
+                if (data.session) {
+                    // Redirect to callback
+                    window.location.href = '/auth/login/callback?access_token=' + data.session.access_token + '&refresh_token=' + data.session.refresh_token;
+                } else {
+                    loginError.textContent = 'Authentication failed. Please try again.';
+                    loginError.classList.remove('d-none');
+                }
                 
             } catch (error) {
                 console.error('Error signing in with email:', error);
-                alert('Error signing in. Please check your credentials and try again.');
+                loginError.textContent = 'Network error. Please check your connection and try again.';
+                loginError.classList.remove('d-none');
+            } finally {
+                // Reset loading state
+                loginBtn.disabled = false;
+                loginSpinner.classList.add('d-none');
             }
         });
     </script>

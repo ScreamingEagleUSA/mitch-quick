@@ -32,6 +32,9 @@
                             {% endif %}
                         {% endwith %}
                         
+                        <div id="registerError" class="alert alert-danger d-none" role="alert"></div>
+                        <div id="registerSuccess" class="alert alert-success d-none" role="alert"></div>
+                        
                         <form id="registerForm">
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email address</label>
@@ -50,8 +53,9 @@
                             </div>
                             
                             <div class="d-grid mb-3">
-                                <button type="submit" class="btn btn-success btn-lg">
-                                    <i class="fas fa-user-plus me-2"></i>Create Account
+                                <button type="submit" class="btn btn-success btn-lg" id="registerBtn">
+                                    <span class="spinner-border spinner-border-sm d-none me-2" id="registerSpinner"></span>
+                                    Create Account
                                 </button>
                             </div>
                         </form>
@@ -87,22 +91,37 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const password2 = document.getElementById('password2').value;
+            const registerBtn = document.getElementById('registerBtn');
+            const registerSpinner = document.getElementById('registerSpinner');
+            const registerError = document.getElementById('registerError');
+            const registerSuccess = document.getElementById('registerSuccess');
+            
+            // Hide previous messages
+            registerError.classList.add('d-none');
+            registerSuccess.classList.add('d-none');
             
             // Validation
             if (!email || !password || !password2) {
-                alert('Please fill in all fields.');
+                registerError.textContent = 'Please fill in all fields.';
+                registerError.classList.remove('d-none');
                 return;
             }
             
             if (password !== password2) {
-                alert('Passwords do not match.');
+                registerError.textContent = 'Passwords do not match.';
+                registerError.classList.remove('d-none');
                 return;
             }
             
             if (password.length < 6) {
-                alert('Password must be at least 6 characters long.');
+                registerError.textContent = 'Password must be at least 6 characters long.';
+                registerError.classList.remove('d-none');
                 return;
             }
+            
+            // Show loading state
+            registerBtn.disabled = true;
+            registerSpinner.classList.remove('d-none');
             
             try {
                 const { data, error } = await supabase.auth.signUp({
@@ -110,18 +129,49 @@
                     password: password
                 });
                 
-                if (error) throw error;
+                if (error) {
+                    // Handle specific error cases
+                    let errorMessage = 'Registration failed. Please try again.';
+                    
+                    if (error.message.includes('User already registered')) {
+                        errorMessage = 'An account with this email already exists. Please sign in instead.';
+                    } else if (error.message.includes('Password should be at least')) {
+                        errorMessage = 'Password must be at least 6 characters long.';
+                    } else if (error.message.includes('Invalid email')) {
+                        errorMessage = 'Please enter a valid email address.';
+                    } else {
+                        errorMessage = error.message;
+                    }
+                    
+                    registerError.textContent = errorMessage;
+                    registerError.classList.remove('d-none');
+                    return;
+                }
                 
                 if (data.user) {
-                    alert('Registration successful! Please check your email to verify your account.');
-                    window.location.href = '{{ url_for("auth.login") }}';
+                    registerSuccess.textContent = 'Registration successful! Please check your email to verify your account before signing in.';
+                    registerSuccess.classList.remove('d-none');
+                    
+                    // Clear form
+                    document.getElementById('registerForm').reset();
+                    
+                    // Redirect after a short delay
+                    setTimeout(() => {
+                        window.location.href = '{{ url_for("auth.login") }}';
+                    }, 3000);
                 } else {
-                    alert('Registration failed. Please try again.');
+                    registerError.textContent = 'Registration failed. Please try again.';
+                    registerError.classList.remove('d-none');
                 }
                 
             } catch (error) {
                 console.error('Registration error:', error);
-                alert('Registration failed: ' + error.message);
+                registerError.textContent = 'Network error. Please check your connection and try again.';
+                registerError.classList.remove('d-none');
+            } finally {
+                // Reset loading state
+                registerBtn.disabled = false;
+                registerSpinner.classList.add('d-none');
             }
         });
     </script>

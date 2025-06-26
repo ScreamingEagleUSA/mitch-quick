@@ -1,6 +1,6 @@
 # This blueprint is no longer needed as we're using Replit auth
 # The authentication is now handled by replit_auth.py and routes.py
-from flask import Blueprint, redirect, url_for, render_template, request, session, flash
+from flask import Blueprint, redirect, url_for, render_template, request, session, flash, jsonify
 from flask_login import login_user, logout_user, current_user
 from supabase_auth import verify_supabase_token, get_user_from_supabase
 from models import User, db
@@ -107,6 +107,34 @@ def login_callback():
         print(f"Login callback error: {e}")
         flash('Authentication failed. Please try again.', 'error')
         return redirect(url_for('auth.login'))
+
+@auth_bp.route('/verify-email')
+def verify_email():
+    """Handle email verification"""
+    token = request.args.get('token')
+    type_param = request.args.get('type')
+    
+    if token and type_param == 'signup':
+        try:
+            # Verify the email
+            response = supabase.auth.verify_otp({
+                "token_hash": token,
+                "type": "signup"
+            })
+            
+            if response.user:
+                flash('Email verified successfully! You can now sign in.', 'success')
+                return redirect(url_for('auth.login'))
+            else:
+                flash('Email verification failed. Please try again.', 'error')
+                return redirect(url_for('auth.login'))
+                
+        except Exception as e:
+            print(f"Email verification error: {e}")
+            flash('Email verification failed. Please try again.', 'error')
+            return redirect(url_for('auth.login'))
+    
+    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/logout')
 def logout():
