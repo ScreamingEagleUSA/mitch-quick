@@ -75,7 +75,7 @@ def debug():
 
 # Import and register blueprints
 try:
-    from blueprints.auth import auth_bp
+    from supabase_auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix="/auth")
     print("Auth blueprint registered successfully")
 except Exception as e:
@@ -111,7 +111,33 @@ def index():
         return redirect(url_for('dashboard.index'))
     else:
         # User is not logged in, show landing page
-        return render_template('auth/landing.html')
+        return render_template('landing.html')
+
+@app.route('/test-auth')
+def test_auth():
+    """Test authentication status"""
+    return {
+        'authenticated': current_user.is_authenticated,
+        'user_id': current_user.id if current_user.is_authenticated else None,
+        'user_email': current_user.email if current_user.is_authenticated else None,
+        'session_keys': list(session.keys()),
+        'has_supabase_token': 'supabase_access_token' in session
+    }
+
+@app.route('/protected-test')
+def protected_test():
+    """Test protected route"""
+    from supabase_auth import require_login
+    
+    @require_login
+    def protected_function():
+        return {
+            'message': 'This is a protected route',
+            'user_id': current_user.id,
+            'user_email': current_user.email
+        }
+    
+    return protected_function()
 
 @app.route('/health')
 def health():
