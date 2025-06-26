@@ -12,7 +12,17 @@ from models import User
 # Initialize Supabase client
 supabase_url = os.environ.get("SUPABASE_URL")
 supabase_key = os.environ.get("SUPABASE_ANON_KEY")
-supabase: Client = create_client(supabase_url, supabase_key)
+
+# Only create Supabase client if credentials are available
+if supabase_url and supabase_key:
+    try:
+        supabase: Client = create_client(supabase_url, supabase_key)
+    except Exception as e:
+        print(f"Warning: Could not initialize Supabase client: {e}")
+        supabase = None
+else:
+    print("Warning: Supabase credentials not found in environment variables")
+    supabase = None
 
 # Initialize Flask-Login
 login_manager = LoginManager(app)
@@ -25,6 +35,9 @@ def load_user(user_id):
 
 def get_user_from_supabase(user_id):
     """Get user from Supabase and sync with local database"""
+    if not supabase:
+        return None
+        
     try:
         # Get user from Supabase
         response = supabase.auth.admin.get_user_by_id(user_id)

@@ -22,24 +22,27 @@ app.config.from_object(Config)
 # Database configuration
 db = SQLAlchemy(app, model_class=Base)
 
-# Create tables
-# Need to put this in module-level to make it work with Gunicorn.
-with app.app_context():
-    import models  # noqa: F401
-    db.create_all()
-    logging.info("Database tables created")
-    
-    # Add template functions
-    @app.template_global()
-    def current_time():
-        from datetime import datetime
-        return datetime.now().strftime('%Y-%m-%d %H:%M')
-    
-    # Add last updated to context processor
-    @app.context_processor
-    def inject_last_updated():
-        from datetime import datetime
-        return {'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M')}
+# Add template functions
+@app.template_global()
+def current_time():
+    from datetime import datetime
+    return datetime.now().strftime('%Y-%m-%d %H:%M')
+
+# Add last updated to context processor
+@app.context_processor
+def inject_last_updated():
+    from datetime import datetime
+    return {'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M')}
+
+# Create tables - but don't fail if database is unreachable
+try:
+    with app.app_context():
+        import models  # noqa: F401
+        db.create_all()
+        logging.info("Database tables created")
+except Exception as e:
+    logging.warning(f"Could not create database tables during startup: {e}")
+    logging.info("Tables may already exist or database may be temporarily unavailable")
 
 # Make session permanent
 @app.before_request
