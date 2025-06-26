@@ -44,6 +44,19 @@ try:
 except Exception as e:
     logging.warning(f"Could not create database tables during startup: {e}")
     logging.info("Tables may already exist or database may be temporarily unavailable")
+    logging.info("Application will continue with limited functionality")
+
+# Add database connection check function
+def is_database_available():
+    """Check if database is available"""
+    try:
+        with app.app_context():
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
+            return True
+    except Exception as e:
+        logging.warning(f"Database connection failed: {e}")
+        return False
 
 # Make session permanent
 @app.before_request
@@ -73,6 +86,79 @@ def debug():
             debug_info['database_connected'] = True
     except Exception as e:
         debug_info['database_error'] = str(e)
+    
+    return debug_info
+
+@app.route('/debug/auth')
+def debug_auth():
+    """Debug endpoint to check authentication status"""
+    access_token = session.get('supabase_access_token')
+    
+    debug_info = {
+        'current_user_authenticated': current_user.is_authenticated if current_user else False,
+        'current_user_id': current_user.id if current_user.is_authenticated else None,
+        'current_user_email': current_user.email if current_user.is_authenticated else None,
+        'has_supabase_token': bool(access_token),
+        'session_keys': list(session.keys()),
+        'supabase_client_initialized': bool(os.environ.get('SUPABASE_URL') and os.environ.get('SUPABASE_ANON_KEY'))
+    }
+    
+    if access_token:
+        try:
+            import jwt
+            # Decode token without verification
+            decoded = jwt.decode(access_token, options={"verify_signature": False})
+            debug_info['token_info'] = {
+                'user_id': decoded.get('sub'),
+                'email': decoded.get('email'),
+                'exp': decoded.get('exp'),
+                'iat': decoded.get('iat'),
+                'aud': decoded.get('aud')
+            }
+        except Exception as e:
+            debug_info['token_error'] = str(e)
+    
+    return debug_info
+
+@app.route('/debug/db')
+def debug_db():
+    """Debug endpoint to check database connection"""
+    database_url = os.environ.get('DATABASE_URL')
+    
+    debug_info = {
+        'database_url_exists': bool(database_url),
+        'database_url_preview': database_url[:50] + '...' if database_url and len(database_url) > 50 else database_url,
+        'database_connected': False,
+        'tables_exist': False,
+        'connection_error': None
+    }
+    
+    if not database_url:
+        debug_info['connection_error'] = 'DATABASE_URL not set'
+        return debug_info
+    
+    try:
+        with app.app_context():
+            from sqlalchemy import text
+            
+            # Test basic connection
+            db.session.execute(text('SELECT 1'))
+            debug_info['database_connected'] = True
+            
+            # Check if tables exist
+            result = db.session.execute(text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name IN ('auction', 'item', 'partner', 'item_partner', 'item_expense', 'item_sales')
+            """))
+            
+            existing_tables = [row[0] for row in result.fetchall()]
+            debug_info['existing_tables'] = existing_tables
+            debug_info['tables_exist'] = len(existing_tables) > 0
+            
+    except Exception as e:
+        debug_info['connection_error'] = str(e)
     
     return debug_info
 

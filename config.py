@@ -21,6 +21,11 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         "pool_recycle": 300,
+        "connect_args": {
+            "connect_timeout": 10,
+            "application_name": "mitch-quick",
+            "sslmode": "require"
+        }
     }
     
     # eBay API Configuration
