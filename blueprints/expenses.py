@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from replit_auth import require_login
+from supabase_auth import require_login
 from datetime import datetime, date
 from models import Item, ItemExpense, ItemStatus
 from app import db

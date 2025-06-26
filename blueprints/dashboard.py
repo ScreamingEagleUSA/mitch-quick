@@ -5,7 +5,7 @@ from sqlalchemy import func
 from models import Auction, Item, Partner, ItemPartner, ItemStatus
 from utils.profit_calculations import calculate_portfolio_metrics
 from utils.ebay_api import update_all_watchlist_prices
-from replit_auth import require_login
+from supabase_auth import require_login
 from app import db
 
 dashboard_bp = Blueprint('dashboard', __name__)

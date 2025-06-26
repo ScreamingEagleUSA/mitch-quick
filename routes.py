@@ -1,10 +1,10 @@
 from flask import session, render_template, redirect, url_for
 from flask_login import current_user
 from app import app, db
-from replit_auth import require_login, make_replit_blueprint
+from supabase_auth import require_login, auth_bp
 
-# Register Replit auth blueprint
-app.register_blueprint(make_replit_blueprint(), url_prefix="/auth")
+# Register Supabase auth blueprint
+app.register_blueprint(auth_bp, url_prefix="/auth")
 
 # Register other blueprints
 from blueprints.dashboard import dashboard_bp
