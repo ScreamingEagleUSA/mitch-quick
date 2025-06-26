@@ -66,7 +66,8 @@ def debug():
     # Test database connection
     try:
         with app.app_context():
-            db.session.execute('SELECT 1')
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
             debug_info['database_connected'] = True
     except Exception as e:
         debug_info['database_error'] = str(e)
@@ -116,6 +117,16 @@ def index():
 @app.route('/test-auth')
 def test_auth():
     """Test authentication status"""
+    # Try to load user from Supabase token if not already authenticated
+    if not current_user.is_authenticated:
+        access_token = session.get('supabase_access_token')
+        if access_token:
+            from supabase_auth import verify_supabase_token
+            from flask_login import login_user
+            user = verify_supabase_token(access_token)
+            if user:
+                login_user(user)
+    
     return {
         'authenticated': current_user.is_authenticated,
         'user_id': current_user.id if current_user.is_authenticated else None,
@@ -143,3 +154,25 @@ def protected_test():
 def health():
     """Health check endpoint"""
     return {"status": "healthy", "message": "Mitch Quick is running!"}
+
+@app.route('/auth/auto-login')
+def auto_login():
+    """Manually authenticate user from Supabase token"""
+    access_token = session.get('supabase_access_token')
+    if not access_token:
+        return {'error': 'No Supabase token found'}, 400
+    
+    from supabase_auth import verify_supabase_token
+    from flask_login import login_user
+    
+    user = verify_supabase_token(access_token)
+    if user:
+        login_user(user)
+        return {
+            'success': True,
+            'user_id': user.id,
+            'user_email': user.email,
+            'message': 'User authenticated successfully'
+        }
+    else:
+        return {'error': 'Failed to verify token'}, 400
